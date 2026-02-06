@@ -1,31 +1,36 @@
-# EMO
-Emote Portrait Alive: Generating Expressive Portrait Videos with Audio2Video Diffusion Model under Weak Conditions
+# Export Canva vers PPTX
 
-Linrui Tian, Qi Wang, Bang Zhang, Liefeng Bo,
+Cette application automatise l'export d'un design Canva public en fichier **.pptx**.
 
-Institute for Intelligent Computing, Alibaba Group
+## Installation
 
-<a href='https://humanaigc.github.io/emote-portrait-alive/'><img src='https://img.shields.io/badge/Project-Page-Green'></a>
-<a href='https://arxiv.org/abs/2402.17485'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a>
-[![YouTube](https://badges.aleen42.com/src/youtube.svg)](https://youtu.be/VlJ71kzcn9Y)
-
-![pipeline](content/intro.png)
- 
-## Citation
-```
-@misc{tian2024emo,
-      title={EMO: Emote Portrait Alive - Generating Expressive Portrait Videos with Audio2Video Diffusion Model under Weak Conditions}, 
-      author={Linrui Tian and Qi Wang and Bang Zhang and Liefeng Bo},
-      year={2024},
-      eprint={2402.17485},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
-}
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m playwright install chromium
 ```
 
+## Utilisation
 
+```bash
+python canva_exporter.py "https://www.canva.com/design/DAG_uRJ4D4k/7josRBEDkBu9KS4VfrIhzw/view?utm_content=DAG_uRJ4D4k&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h5272fd92ea#7"
+```
 
+Le fichier sera enregistré dans `exports/`.
 
+### Options utiles
 
+- `--headed` : ouvre le navigateur en mode visible (utile si Canva demande une connexion).
+- `-o <dossier>` : change le dossier de sortie.
 
+Exemple:
 
+```bash
+python canva_exporter.py "<lien_canva>" --headed -o mes_exports
+```
+
+## Notes
+
+- L'automatisation dépend de l'interface Canva (noms de boutons et disposition).
+- Si Canva modifie l'UI ou impose une authentification stricte, exécutez avec `--headed` pour terminer manuellement la partie connexion puis laisser le script faire le téléchargement.
