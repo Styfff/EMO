@@ -9,7 +9,9 @@ import sys
 import time
 from pathlib import Path
 
-from playwright.sync_api import Error, TimeoutError, sync_playwright
+
+class MissingDependencyError(RuntimeError):
+    """Raised when optional runtime dependency is missing."""
 
 
 def slug_from_url(url: str) -> str:
@@ -19,7 +21,19 @@ def slug_from_url(url: str) -> str:
     return f"canva-export-{int(time.time())}"
 
 
-def click_if_visible(page, selectors: list[str], timeout_ms: int = 2_000) -> bool:
+def _load_playwright():
+    try:
+        from playwright.sync_api import Error, TimeoutError, sync_playwright
+    except ModuleNotFoundError as exc:
+        raise MissingDependencyError(
+            "La dépendance 'playwright' est absente. Installez-la avec:\n"
+            "  pip install -r requirements.txt\n"
+            "  python -m playwright install chromium"
+        ) from exc
+    return Error, TimeoutError, sync_playwright
+
+
+def click_if_visible(page, selectors: list[str], Error, timeout_ms: int = 2_000) -> bool:
     for selector in selectors:
         locator = page.locator(selector)
         try:
@@ -31,7 +45,7 @@ def click_if_visible(page, selectors: list[str], timeout_ms: int = 2_000) -> boo
     return False
 
 
-def click_by_text(page, texts: list[str], timeout_ms: int = 2_000) -> bool:
+def click_by_text(page, texts: list[str], Error, timeout_ms: int = 2_000) -> bool:
     for text in texts:
         locator = page.get_by_text(text, exact=False)
         try:
@@ -44,6 +58,8 @@ def click_by_text(page, texts: list[str], timeout_ms: int = 2_000) -> bool:
 
 
 def export_canva_to_pptx(url: str, output_dir: Path, headless: bool) -> Path:
+    Error, _, sync_playwright = _load_playwright()
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with sync_playwright() as p:
@@ -52,32 +68,32 @@ def export_canva_to_pptx(url: str, output_dir: Path, headless: bool) -> Path:
         page = context.new_page()
         page.goto(url, wait_until="domcontentloaded", timeout=120_000)
 
-        # Tenter de fermer les bannières qui masquent les boutons.
-        click_by_text(page, ["Accepter", "Accept all", "Tout accepter"], timeout_ms=1_500)
-        click_by_text(page, ["Ignorer", "Fermer", "Close"], timeout_ms=1_500)
+        click_by_text(page, ["Accepter", "Accept all", "Tout accepter"], Error, timeout_ms=1_500)
+        click_by_text(page, ["Ignorer", "Fermer", "Close"], Error, timeout_ms=1_500)
 
-        # Ouvrir le menu de partage/action.
         opened_menu = (
-            click_by_text(page, ["Partager", "Share"]) or
-            click_if_visible(page, ["button[aria-label*='Share']", "button[aria-label*='Partager']"]) or
-            click_if_visible(page, ["button[aria-label*='Plus']", "button[aria-label*='More']"])
+            click_by_text(page, ["Partager", "Share"], Error)
+            or click_if_visible(page, ["button[aria-label*='Share']", "button[aria-label*='Partager']"], Error)
+            or click_if_visible(page, ["button[aria-label*='Plus']", "button[aria-label*='More']"], Error)
         )
 
         if not opened_menu:
-            # Essai direct: certains designs publics affichent le bouton Télécharger.
-            click_by_text(page, ["Télécharger", "Download"], timeout_ms=2_500)
+            click_by_text(page, ["Télécharger", "Download"], Error, timeout_ms=2_500)
 
-        # Aller sur l'option de téléchargement.
-        if not click_by_text(page, ["Télécharger", "Download"], timeout_ms=4_000):
+        if not click_by_text(page, ["Télécharger", "Download"], Error, timeout_ms=4_000):
             browser.close()
             raise RuntimeError(
                 "Impossible de trouver le bouton de téléchargement automatiquement. "
                 "Relancez avec --headed pour vous connecter à Canva si nécessaire."
             )
 
-        # Choisir le type PPTX.
-        click_if_visible(page, ["button:has-text('Type de fichier')", "button:has-text('File type')"], timeout_ms=4_000)
-        if not click_by_text(page, ["Microsoft PowerPoint", "PPTX"], timeout_ms=4_000):
+        click_if_visible(
+            page,
+            ["button:has-text('Type de fichier')", "button:has-text('File type')"],
+            Error,
+            timeout_ms=4_000,
+        )
+        if not click_by_text(page, ["Microsoft PowerPoint", "PPTX"], Error, timeout_ms=4_000):
             browser.close()
             raise RuntimeError("Impossible de sélectionner le format Microsoft PowerPoint (PPTX).")
 
@@ -85,7 +101,7 @@ def export_canva_to_pptx(url: str, output_dir: Path, headless: bool) -> Path:
         dest = output_dir / filename
 
         with page.expect_download(timeout=120_000) as download_info:
-            if not click_by_text(page, ["Télécharger", "Download"], timeout_ms=4_000):
+            if not click_by_text(page, ["Télécharger", "Download"], Error, timeout_ms=4_000):
                 browser.close()
                 raise RuntimeError("Le bouton de confirmation du téléchargement est introuvable.")
 
@@ -122,10 +138,13 @@ def main() -> int:
             output_dir=Path(args.output_dir),
             headless=not args.headed,
         )
-    except TimeoutError:
-        print("Temps dépassé pendant l'automatisation Canva.", file=sys.stderr)
-        return 2
+    except MissingDependencyError as exc:
+        print(f"Échec de l'export: {exc}", file=sys.stderr)
+        return 3
     except Exception as exc:  # noqa: BLE001
+        if exc.__class__.__name__ == "TimeoutError":
+            print("Temps dépassé pendant l'automatisation Canva.", file=sys.stderr)
+            return 2
         print(f"Échec de l'export: {exc}", file=sys.stderr)
         return 1
 
