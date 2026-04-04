@@ -1,18 +1,22 @@
 # Export Canva vers PPTX
 
-Cette application automatise l'export d'un design Canva public en fichier **.pptx**.
+Application pour exporter un design Canva public en fichier **.pptx**, avec:
+- un exécutable CLI `./canva_exporter`
+- un lien web local via `./start_web`
 
-## Exécutable livré
-
-Un exécutable shell est fourni à la racine du repo:
+## 1) Lancer en mode web (lien demandé)
 
 ```bash
-./canva_exporter "<lien_canva>"
+./start_web --host 0.0.0.0 --port 8080
 ```
 
-Il lance automatiquement `python3 canva_exporter.py`.
+Puis ouvrir:
+- `http://localhost:8080` (depuis la même machine)
+- ou `http://<IP_MACHINE>:8080` (depuis le réseau)
 
-## Installation
+La page web permet d'entrer un lien Canva puis d'exécuter l'export.
+
+## 2) Installation
 
 ```bash
 python3 -m venv .venv
@@ -21,7 +25,7 @@ pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
-## Utilisation
+## 3) Utilisation CLI
 
 ```bash
 ./canva_exporter "https://www.canva.com/design/DAG_uRJ4D4k/7josRBEDkBu9KS4VfrIhzw/view?utm_content=DAG_uRJ4D4k&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h5272fd92ea#7"
@@ -31,17 +35,10 @@ Le fichier sera enregistré dans `exports/`.
 
 ### Options utiles
 
-- `--headed` : ouvre le navigateur en mode visible (utile si Canva demande une connexion).
+- `--headed` : ouvre le navigateur en mode visible.
 - `-o <dossier>` : change le dossier de sortie.
-
-Exemple:
-
-```bash
-./canva_exporter "<lien_canva>" --headed -o mes_exports
-```
 
 ## Notes
 
-- L'automatisation dépend de l'interface Canva (noms de boutons et disposition).
-- Si Canva modifie l'UI ou impose une authentification stricte, exécutez avec `--headed`.
-- Si `playwright` est absent, le programme affiche maintenant une erreur explicite avec les commandes d'installation.
+- Si `playwright` n'est pas disponible, l'application renvoie un message d'installation explicite.
+- L'automatisation dépend de l'interface Canva (peut nécessiter des ajustements si l'UI change).
