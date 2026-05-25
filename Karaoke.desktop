@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Karaoké ASS Generator
+GenericName=Générateur de sous-titres karaoké
+Comment=Transcription IA • génère des sous-titres .ass depuis le navigateur
+Exec=bash -c 'bash "$(dirname "$(readlink -f "%k")")/launch_web.sh"'
+Icon=audio-x-generic
+Terminal=true
+Categories=AudioVideo;Audio;
+StartupNotify=false

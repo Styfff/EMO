@@ -7,19 +7,32 @@ VENV_DIR="$SCRIPT_DIR/venv_karaoke"
 
 # ── Si pas dans un terminal, se relancer dans un ──────────────────────────────
 if [ ! -t 0 ]; then
-    for TERM_EMU in gnome-terminal xfce4-terminal konsole lxterminal mate-terminal xterm; do
-        if command -v "$TERM_EMU" &>/dev/null; then
-            case "$TERM_EMU" in
-                gnome-terminal) "$TERM_EMU" -- bash "$0" "$@" ;;
-                *)              "$TERM_EMU" -e "bash '$0' $*" ;;
-            esac
-            exit
-        fi
-    done
-    if command -v zenity &>/dev/null; then
-        zenity --error --text="Aucun terminal trouvé.\nInstallez xterm : sudo apt install xterm"
+    LAUNCHED=0
+    # Essai avec x-terminal-emulator (alias standard Debian/Ubuntu)
+    if command -v x-terminal-emulator &>/dev/null; then
+        x-terminal-emulator -e bash "$0" "$@" && LAUNCHED=1
     fi
-    exit 1
+    # Essai avec les émulateurs courants
+    if [ "$LAUNCHED" -eq 0 ]; then
+        for T in gnome-terminal xfce4-terminal konsole lxterminal mate-terminal tilix alacritty kitty xterm; do
+            if command -v "$T" &>/dev/null; then
+                case "$T" in
+                    gnome-terminal|tilix) "$T" -- bash "$0" "$@" ;;
+                    alacritty|kitty)      "$T" -e bash "$0" "$@" ;;
+                    *)                    "$T" -e "bash '$0'" ;;
+                esac
+                LAUNCHED=1
+                break
+            fi
+        done
+    fi
+    if [ "$LAUNCHED" -eq 0 ]; then
+        MSG="Aucun terminal trouvé.\nInstallez-en un :\n  sudo apt install xterm"
+        command -v zenity   &>/dev/null && zenity   --error --text="$MSG" && exit 1
+        command -v xmessage &>/dev/null && xmessage "$MSG"  && exit 1
+        echo "$MSG" >&2
+    fi
+    exit
 fi
 
 # ── Installation automatique si nécessaire ────────────────────────────────────
