@@ -7,6 +7,9 @@ openai-whisper>=20231117
 # Interface terminal enrichie (optionnel mais recommandé)
 rich>=13.0.0
 
+# Interface web (karaoke_web.py / launch_web.sh)
+flask>=3.0.0
+
 # ffmpeg est également requis (paquet système) :
 #   Ubuntu/Debian : sudo apt install ffmpeg
 #   macOS         : brew install ffmpeg

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎤 Karaoké ASS Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #08081a;
+      --surface:   #10102e;
+      --card:      rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.09);
+      --bh:        rgba(157,78,221,0.55);
+      --accent:    #9d4edd;
+      --accent2:   #e040fb;
+      --glow:      rgba(157,78,221,0.28);
+      --text:      #e2e2f0;
+      --muted:     #6868a0;
+      --ok:        #4edd9d;
+      --err:       #ff6b6b;
+      --cb:        #ffffff;
+      --ca:        #ffff00;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ubuntu, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 16px 80px;
+      background-image:
+        radial-gradient(ellipse at 15% 15%, rgba(157,78,221,.09) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 85%, rgba(224,64,251,.07) 0%, transparent 55%);
+    }
+
+    .wrap { max-width: 780px; margin: 0 auto; }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header { text-align: center; margin-bottom: 48px; }
+    .logo { font-size: 60px; margin-bottom: 14px; filter: drop-shadow(0 0 22px rgba(224,64,251,.55)); }
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #c084fc 0%, #e040fb 50%, #9d4edd 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -.5px; margin-bottom: 8px;
+    }
+    .sub { color: var(--muted); font-size: .95rem; }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 20px;
+      transition: border-color .2s;
+    }
+    .card-title {
+      font-size: .72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--accent2); margin-bottom: 18px;
+    }
+
+    /* ── Upload zone ────────────────────────────────────────── */
+    .drop {
+      border: 2px dashed var(--border);
+      border-radius: 18px; padding: 52px 24px;
+      text-align: center; cursor: pointer;
+      position: relative; overflow: hidden;
+      background: var(--card);
+      transition: all .25s; margin-bottom: 20px;
+    }
+    .drop:hover, .drop.over { border-color: var(--accent); background: rgba(157,78,221,.06); box-shadow: 0 0 28px var(--glow); }
+    .drop.done  { border-color: var(--ok);    background: rgba(78,221,157,.04); }
+    .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .drop-icon  { font-size: 52px; display: block; margin-bottom: 14px; pointer-events: none; }
+    .drop-main  { font-size: 1.1rem; font-weight: 600; pointer-events: none; }
+    .drop-hint  { font-size: .82rem; color: var(--muted); margin-top: 6px; pointer-events: none; }
+    .drop-name  { margin-top: 12px; font-size: .88rem; color: var(--ok); font-weight: 600; pointer-events: none; }
+
+    /* ── Settings grid ──────────────────────────────────────── */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 16px; }
+    @media (max-width: 620px) { .settings-grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    label { font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+
+    select {
+      appearance: none; -webkit-appearance: none;
+      background: rgba(0,0,0,.38)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239d4edd' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+        no-repeat right 12px center;
+      border: 1px solid var(--border); border-radius: 9px;
+      color: var(--text); padding: 10px 36px 10px 12px;
+      font-size: .88rem; width: 100%; cursor: pointer;
+      transition: border-color .2s, box-shadow .2s; outline: none;
+    }
+    select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+
+    /* slider */
+    .range-row { display: flex; align-items: center; gap: 10px; }
+    input[type="range"] {
+      flex: 1; appearance: none; -webkit-appearance: none;
+      background: transparent; border: none; height: 36px; outline: none; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: rgba(255,255,255,.1); border-radius: 4px; }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none; width: 18px; height: 18px;
+      background: var(--accent); border-radius: 50%; margin-top: -7px;
+      box-shadow: 0 0 8px var(--glow);
+    }
+    .rv { font-size: .9rem; font-weight: 700; color: var(--accent2); min-width: 34px; text-align: right; }
+
+    /* ── Color pickers ──────────────────────────────────────── */
+    .colors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 480px) { .colors-grid { grid-template-columns: 1fr; } }
+
+    .color-row {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(0,0,0,.35); border: 1px solid var(--border);
+      border-radius: 9px; padding: 9px 13px; cursor: pointer;
+      transition: border-color .2s;
+    }
+    .color-row:hover { border-color: var(--accent); }
+    input[type="color"] {
+      width: 38px; height: 38px; border: none; border-radius: 7px;
+      cursor: pointer; padding: 2px; background: none; outline: none;
+    }
+    .chex { font-family: monospace; font-size: .88rem; color: var(--text); text-transform: uppercase; }
+
+    /* ── Karaoke preview ────────────────────────────────────── */
+    .stage {
+      background: #000; border-radius: 14px;
+      padding: 36px 24px; text-align: center;
+      min-height: 110px; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .stage::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(157,78,221,.06) 0%, transparent 70%);
+    }
+    .pw {
+      position: relative; display: inline-block;
+      font-weight: 800; font-size: 2rem; line-height: 1.3;
+      text-shadow: 0 2px 10px rgba(0,0,0,.9);
+      transition: font-family .1s, font-size .1s;
+    }
+    .pb { color: var(--cb); }
+    .pf {
+      position: absolute; inset: 0;
+      color: var(--ca);
+      clip-path: inset(0 100% 0 0);
+      animation: kfill 4s cubic-bezier(.4,0,.2,1) infinite;
+    }
+    @keyframes kfill {
+      0%  { clip-path: inset(0 100% 0 0); }
+      60% { clip-path: inset(0 0    0 0); }
+      88% { clip-path: inset(0 0    0 0); }
+     100% { clip-path: inset(0 100% 0 0); }
+    }
+    .stage-hint { margin-top: 10px; font-size: .76rem; color: #333355; text-align: center; }
+
+    /* ── Generate button ────────────────────────────────────── */
+    .btn-gen {
+      width: 100%; padding: 18px; font-size: 1.05rem; font-weight: 800;
+      color: #fff; border: none; border-radius: 13px; cursor: pointer;
+      background: linear-gradient(135deg, #9d4edd, #e040fb);
+      box-shadow: 0 4px 22px rgba(157,78,221,.42);
+      transition: all .2s; letter-spacing: .4px; margin-top: 4px;
+    }
+    .btn-gen:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(157,78,221,.65); }
+    .btn-gen:active:not(:disabled) { transform: none; }
+    .btn-gen:disabled { opacity: .38; cursor: not-allowed; }
+
+    /* ── Error ──────────────────────────────────────────────── */
+    .err-box {
+      display: none; margin-top: 16px; padding: 14px 18px;
+      background: rgba(255,107,107,.09); border: 1px solid rgba(255,107,107,.3);
+      border-radius: 10px; color: var(--err); font-size: .88rem;
+    }
+    .err-box.on { display: block; }
+
+    /* ── Result ─────────────────────────────────────────────── */
+    .result {
+      display: none; margin-top: 20px; text-align: center;
+      padding: 32px 24px; border: 1px solid rgba(78,221,157,.28);
+      border-radius: 18px; background: rgba(78,221,157,.04);
+    }
+    .result.on { display: block; }
+    .res-icon { font-size: 50px; margin-bottom: 12px; }
+    .res-title { font-size: 1.25rem; font-weight: 800; color: var(--ok); margin-bottom: 8px; }
+    .res-stats { font-size: .88rem; color: var(--muted); margin-bottom: 24px; }
+    .btn-dl {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 32px; background: linear-gradient(135deg, #4edd9d, #2cb878);
+      color: #040a10; border: none; border-radius: 10px;
+      font-size: .97rem; font-weight: 800; cursor: pointer;
+      transition: all .2s; text-decoration: none;
+    }
+    .btn-dl:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(78,221,157,.42); }
+
+    /* ── Loading overlay ────────────────────────────────────── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(8,8,26,.88); backdrop-filter: blur(10px);
+      z-index: 200; flex-direction: column; align-items: center;
+      justify-content: center; gap: 26px;
+    }
+    .overlay.on { display: flex; }
+    .spin {
+      width: 68px; height: 68px;
+      border: 3px solid rgba(157,78,221,.18);
+      border-top-color: var(--accent);
+      border-radius: 50%; animation: rot .75s linear infinite;
+    }
+    @keyframes rot { to { transform: rotate(360deg); } }
+    .ov-text { font-size: 1.05rem; font-weight: 600; }
+    .ov-sub  { font-size: .83rem; color: var(--muted); text-align: center; max-width: 300px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">🎤</div>
+    <h1>Karaoké ASS Generator</h1>
+    <p class="sub">Transcription IA • sous-titres karaoké en un clic</p>
+  </header>
+
+  <!-- Upload -->
+  <div class="drop" id="drop">
+    <input type="file" id="audioIn" accept="audio/*,.mp3,.wav,.flac,.m4a,.ogg,.aac,.wma">
+    <span class="drop-icon" id="dropIcon">🎵</span>
+    <p  class="drop-main" id="dropMain">Glissez un fichier audio ici</p>
+    <p  class="drop-hint">ou cliquez pour parcourir · MP3, WAV, FLAC, M4A, OGG…</p>
+    <p  class="drop-name" id="dropName"></p>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <div class="card-title">⚙ Configuration</div>
+    <div class="settings-grid">
+      <div class="field">
+        <label for="modelSel">Modèle Whisper</label>
+        <select id="modelSel"></select>
+      </div>
+      <div class="field">
+        <label for="fontSel">Police</label>
+        <select id="fontSel"></select>
+      </div>
+      <div class="field">
+        <label>Taille</label>
+        <div class="range-row">
+          <input type="range" id="fontSize" min="24" max="120" value="60">
+          <span class="rv" id="fsVal">60</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colors -->
+  <div class="card">
+    <div class="card-title">🎨 Couleurs des paroles</div>
+    <div class="colors-grid">
+      <div class="field">
+        <label>Avant le chant</label>
+        <div class="color-row" onclick="document.getElementById('cBefore').click()">
+          <input type="color" id="cBefore" value="#ffffff">
+          <span class="chex" id="cBeforeHex">#FFFFFF</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Pendant / après le chant</label>
+        <div class="color-row" onclick="document.getElementById('cAfter').click()">
+          <input type="color" id="cAfter" value="#ffff00">
+          <span class="chex" id="cAfterHex">#FFFF00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="card">
+    <div class="card-title">▶ Aperçu karaoké en direct</div>
+    <div class="stage">
+      <div class="pw" id="pw">
+        <div class="pb" id="pb">♫ Chantez avec moi ♫</div>
+        <div class="pf" id="pf">♫ Chantez avec moi ♫</div>
+      </div>
+    </div>
+    <p class="stage-hint">L'effet se met à jour instantanément selon vos choix</p>
+  </div>
+
+  <!-- Generate -->
+  <button class="btn-gen" id="btnGen" disabled>🎵 Générer le fichier .ass</button>
+
+  <!-- Error -->
+  <div class="err-box" id="errBox"></div>
+
+  <!-- Result -->
+  <div class="result" id="resultBox">
+    <div class="res-icon">✅</div>
+    <div class="res-title">Fichier ASS généré avec succès !</div>
+    <div class="res-stats" id="resStats"></div>
+    <button class="btn-dl" id="btnDl">⬇ Télécharger le .ass</button>
+  </div>
+
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay">
+  <div class="spin"></div>
+  <div class="ov-text" id="ovText">Initialisation…</div>
+  <div class="ov-sub">La transcription peut prendre quelques minutes<br>selon le modèle et la durée du fichier audio</div>
+</div>
+
+<!-- Data injected by Flask -->
+<script>
+  const D = {
+    models: {{ models | tojson }},
+    fonts:  {{ fonts  | tojson }},
+    mdesc: {
+      tiny:   "tiny   — très rapide, moins précis",
+      base:   "base   — rapide et correct  ✓",
+      small:  "small  — bon équilibre",
+      medium: "medium — très précis",
+      large:  "large  — meilleure précision"
+    }
+  };
+</script>
+
+<script>
+  // ── Populate selects ──────────────────────────────────────────────────────
+  const modelSel = document.getElementById('modelSel');
+  D.models.forEach(m => {
+    const o = new Option(D.mdesc[m] || m, m);
+    if (m === 'base') o.selected = true;
+    modelSel.add(o);
+  });
+
+  const fontSel = document.getElementById('fontSel');
+  D.fonts.forEach((f, i) => fontSel.add(new Option(f, f, i === 0, i === 0)));
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let file = null, blob = null, dlName = 'karaoke.ass';
+
+  // ── Drop zone ─────────────────────────────────────────────────────────────
+  const drop = document.getElementById('drop');
+  const audioIn = document.getElementById('audioIn');
+
+  audioIn.addEventListener('change', () => audioIn.files[0] && setFile(audioIn.files[0]));
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('over');
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+
+  function setFile(f) {
+    file = f;
+    drop.classList.add('done');
+    document.getElementById('dropIcon').textContent = '🎶';
+    document.getElementById('dropMain').textContent = 'Fichier prêt';
+    document.getElementById('dropName').textContent =
+      f.name + '  (' + (f.size < 1e6 ? (f.size/1024).toFixed(1)+' Ko' : (f.size/1e6).toFixed(1)+' Mo') + ')';
+    document.getElementById('btnGen').disabled = false;
+    hideResult(); hideErr();
+  }
+
+  // ── Live preview ──────────────────────────────────────────────────────────
+  const cBefore = document.getElementById('cBefore');
+  const cAfter  = document.getElementById('cAfter');
+
+  function updatePreview() {
+    const cb = cBefore.value, ca = cAfter.value;
+    document.documentElement.style.setProperty('--cb', cb);
+    document.documentElement.style.setProperty('--ca', ca);
+    document.getElementById('cBeforeHex').textContent = cb.toUpperCase();
+    document.getElementById('cAfterHex').textContent  = ca.toUpperCase();
+
+    const fz = document.getElementById('fontSize').value;
+    document.getElementById('fsVal').textContent = fz;
+    const pw = document.getElementById('pw');
+    pw.style.fontFamily = `"${fontSel.value}", sans-serif`;
+    pw.style.fontSize   = Math.round(fz / 2.6) + 'px';
+  }
+
+  cBefore.addEventListener('input', updatePreview);
+  cAfter.addEventListener('input', updatePreview);
+  fontSel.addEventListener('change', updatePreview);
+  document.getElementById('fontSize').addEventListener('input', updatePreview);
+  updatePreview();
+
+  // ── Progress overlay ──────────────────────────────────────────────────────
+  const MSGS = [
+    'Chargement du modèle Whisper…',
+    'Analyse du fichier audio…',
+    'Transcription en cours…',
+    'Alignement temporel des mots…',
+    'Génération des sous-titres ASS…',
+  ];
+  let _t = null, _i = 0;
+
+  function showOverlay() {
+    _i = 0;
+    document.getElementById('overlay').classList.add('on');
+    const el = document.getElementById('ovText');
+    function tick() { el.textContent = MSGS[_i++ % MSGS.length]; _t = setTimeout(tick, 4000); }
+    tick();
+  }
+  function hideOverlay() {
+    document.getElementById('overlay').classList.remove('on');
+    clearTimeout(_t);
+  }
+
+  // ── Generate ──────────────────────────────────────────────────────────────
+  document.getElementById('btnGen').addEventListener('click', async () => {
+    if (!file) return;
+    hideErr(); hideResult(); showOverlay();
+    document.getElementById('btnGen').disabled = true;
+
+    const fd = new FormData();
+    fd.append('audio',        file);
+    fd.append('model',        modelSel.value);
+    fd.append('font',         fontSel.value);
+    fd.append('font_size',    document.getElementById('fontSize').value);
+    fd.append('color_before', cBefore.value);
+    fd.append('color_after',  cAfter.value);
+
+    try {
+      const r = await fetch('/generate', { method: 'POST', body: fd });
+
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+        throw new Error(j.error || `Erreur ${r.status}`);
+      }
+
+      blob = await r.blob();
+      const cd = r.headers.get('Content-Disposition') || '';
+      const m  = cd.match(/filename[^;=\n]*=([^;\n]*)/);
+      dlName   = m ? m[1].replace(/['"]/g, '').trim() : file.name.replace(/\.[^.]+$/, '_karaoke.ass');
+
+      const words = r.headers.get('X-Word-Count') || '—';
+      const lines = r.headers.get('X-Line-Count') || '—';
+      const lang  = r.headers.get('X-Language')   || '—';
+
+      hideOverlay();
+      showResult(lines, words, lang);
+
+    } catch (e) {
+      hideOverlay();
+      showErr(e.message);
+    } finally {
+      document.getElementById('btnGen').disabled = false;
+    }
+  });
+
+  // ── Download ──────────────────────────────────────────────────────────────
+  document.getElementById('btnDl').addEventListener('click', () => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'),
+      { href: url, download: dlName }
+    ).click();
+    URL.revokeObjectURL(url);
+  });
+
+  function showResult(lines, words, lang) {
+    document.getElementById('resStats').textContent =
+      `${lines} lignes · ${words} mots · langue : ${lang}`;
+    document.getElementById('resultBox').classList.add('on');
+  }
+  function hideResult() { document.getElementById('resultBox').classList.remove('on'); blob = null; }
+  function showErr(msg) { const el = document.getElementById('errBox'); el.textContent = '⚠  ' + msg; el.classList.add('on'); }
+  function hideErr()    { document.getElementById('errBox').classList.remove('on'); }
+</script>
+</body>
+</html>
