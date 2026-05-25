@@ -1,0 +1,13 @@
+# Karaoke ASS Subtitle Generator — dépendances Python
+# Installez avec : pip install -r requirements_karaoke.txt
+
+# Transcription audio (installe aussi torch automatiquement)
+openai-whisper>=20231117
+
+# Interface terminal enrichie (optionnel mais recommandé)
+rich>=13.0.0
+
+# ffmpeg est également requis (paquet système) :
+#   Ubuntu/Debian : sudo apt install ffmpeg
+#   macOS         : brew install ffmpeg
+#   Windows       : https://ffmpeg.org/download.html
