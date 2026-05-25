@@ -86,6 +86,40 @@ def format_time_ass(seconds: float) -> str:
     return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
 
 
+# ── Correction des timestamps Whisper ─────────────────────────────────────────
+
+def _fix_word_timing(words: list) -> list:
+    """
+    Whisper absorbe parfois le silence précédant la première syllabe dans le
+    timestamp du premier mot (start=0, end=19s pour un mot de 0.3s).
+    On détecte ces durées aberrantes et on recale le start juste avant le end.
+    """
+    if len(words) < 2:
+        return words
+
+    # Durée réelle de chaque mot (en secondes)
+    durs = sorted(
+        w["end"] - w["start"]
+        for w in words
+        if w["end"] > w["start"] and (w["end"] - w["start"]) < 5.0
+    )
+    if not durs:
+        return words
+
+    median_dur = durs[len(durs) // 2]
+    typical    = max(0.1, min(median_dur, 0.6))   # durée "normale" de référence
+    threshold  = max(median_dur * 6, 2.5)          # au-delà → silence absorbé
+
+    fixed = []
+    for w in words:
+        dur = w["end"] - w["start"]
+        if dur > threshold:
+            fixed.append({**w, "start": max(w["start"], w["end"] - typical)})
+        else:
+            fixed.append(w)
+    return fixed
+
+
 # ── Génération du fichier ASS ──────────────────────────────────────────────────
 
 def build_ass(
@@ -148,6 +182,8 @@ def build_ass(
             )
             continue
 
+        words = _fix_word_timing(words)
+
         line_start = words[0]["start"]
         line_end   = words[-1]["end"]
         parts = []
@@ -158,7 +194,7 @@ def build_ass(
                 dur_cs = int(round((words[i + 1]["start"] - w["start"]) * 100))
             else:
                 dur_cs = int(round((w["end"] - w["start"]) * 100))
-            dur_cs = max(1, dur_cs)
+            dur_cs = max(1, min(dur_cs, 500))   # cap à 5 s (évite les silences absorbés résiduels)
             parts.append(f"{{\\kf{dur_cs}}}{w['word']}")
 
         kara_text = "".join(parts).strip()
@@ -290,7 +326,7 @@ def select_color(prompt_text: str, default_key: str = "1") -> str:
 
 # ── Transcription Whisper ──────────────────────────────────────────────────────
 
-def transcribe(audio_path: str, model_name: str) -> dict:
+def transcribe(audio_path: str, model_name: str, language: str | None = None) -> dict:
     """Transcrit l'audio avec horodatage mot par mot."""
     try:
         import whisper
@@ -301,6 +337,18 @@ def transcribe(audio_path: str, model_name: str) -> dict:
             "ou lancez   : bash install.sh"
         )
         sys.exit(1)
+
+    # Paramètres optimisés pour les chansons (réduit les hallucinations)
+    transcribe_opts = dict(
+        word_timestamps=True,
+        verbose=False,
+        language=language,
+        condition_on_previous_text=False,  # évite la propagation d'erreurs
+        no_speech_threshold=0.6,           # meilleure détection des silences
+        compression_ratio_threshold=2.4,   # filtre les hallucinations
+        temperature=0.0,                   # sortie déterministe
+        beam_size=5,                       # meilleure précision
+    )
 
     if HAS_RICH:
         with Progress(
@@ -313,12 +361,12 @@ def transcribe(audio_path: str, model_name: str) -> dict:
             t = prog.add_task(f"Chargement du modèle [cyan]{model_name}[/cyan]…", total=None)
             model = whisper.load_model(model_name)
             prog.update(t, description="Transcription en cours… (peut prendre plusieurs minutes)")
-            result = model.transcribe(audio_path, word_timestamps=True, verbose=False)
+            result = model.transcribe(audio_path, **transcribe_opts)
     else:
         print(f"Chargement du modèle '{model_name}'…")
         model = whisper.load_model(model_name)
         print("Transcription en cours…")
-        result = model.transcribe(audio_path, word_timestamps=True, verbose=False)
+        result = model.transcribe(audio_path, **transcribe_opts)
 
     return result
 
@@ -438,7 +486,7 @@ Exemples :
             sys.exit(0)
 
     # ── Transcription ──────────────────────────────────────────────────────────
-    result = transcribe(str(audio_path), model_name)
+    result = transcribe(str(audio_path), model_name, language=args.language or None)
 
     # ── Génération ASS ─────────────────────────────────────────────────────────
     if HAS_RICH:

@@ -340,6 +340,26 @@ function fmtTime(s) {
   return `${h}:${p(m)}:${p(sc)}.${p(cs)}`;
 }
 
+function fixChunkTiming(chunks) {
+  // Whisper absorbe parfois le silence initial dans le timestamp du premier mot
+  // (ex: start=0, end=19.34 pour un mot de 0.3 s). On recale le start.
+  if (chunks.length < 2) return chunks;
+  const durs = chunks
+    .map(c => (c.timestamp[1] ?? c.timestamp[0] + 0.3) - c.timestamp[0])
+    .filter(d => d > 0 && d < 5)
+    .sort((a, b) => a - b);
+  if (!durs.length) return chunks;
+  const median  = durs[Math.floor(durs.length / 2)];
+  const typical = Math.max(0.1, Math.min(median, 0.6));
+  const thresh  = Math.max(median * 6, 2.5);
+  return chunks.map(c => {
+    const t0 = c.timestamp[0], t1 = c.timestamp[1] ?? t0 + 0.3;
+    return (t1 - t0) > thresh
+      ? { ...c, timestamp: [Math.max(t0, t1 - typical), t1] }
+      : c;
+  });
+}
+
 function groupChunks(chunks) {
   const MAX_GAP = 0.7, MAX_WORDS = 10, MAX_DUR = 7;
   const lines = []; let cur = [];
@@ -375,7 +395,7 @@ function buildAss(lines, fontName, cb, ca, fontSize) {
     const txt = words.map((w, i) => {
       const next   = words[i+1]?.timestamp[0] ?? (w.timestamp[1] ?? w.timestamp[0] + 0.3);
       const wEnd   = w.timestamp[1] ?? w.timestamp[0] + 0.3;
-      const durCs  = Math.max(1, Math.round(((i < words.length-1 ? next : wEnd) - w.timestamp[0]) * 100));
+      const durCs  = Math.max(1, Math.min(500, Math.round(((i < words.length-1 ? next : wEnd) - w.timestamp[0]) * 100)));
       return `{\\kf${durCs}}${w.text}`;
     }).join('');
     return `Dialogue: 0,${fmtTime(t0)},${fmtTime(t1)},Default,,0,0,0,karaoke,${txt.trim()}`;
@@ -494,7 +514,7 @@ document.getElementById('btnGen').addEventListener('click', async () => {
 
     // 3. Generate ASS
     setBar(95, 'Génération du fichier ASS…');
-    const chunks = result.chunks || [];
+    const chunks = fixChunkTiming(result.chunks || []);
     const lines  = groupChunks(chunks);
     const ass    = buildAss(
       lines,

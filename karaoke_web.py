@@ -42,6 +42,7 @@ def generate():
     font_size    = int(request.form.get("font_size", 60))
     color_before = request.form.get("color_before", "#FFFFFF")
     color_after  = request.form.get("color_after",  "#FFFF00")
+    language     = request.form.get("language")     or None
 
     suffix = Path(audio.filename).suffix or ".mp3"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
@@ -51,7 +52,17 @@ def generate():
     try:
         import whisper
         model  = whisper.load_model(model_name)
-        result = model.transcribe(tmp.name, word_timestamps=True, verbose=False)
+        result = model.transcribe(
+            tmp.name,
+            word_timestamps=True,
+            verbose=False,
+            language=language,
+            condition_on_previous_text=False,
+            no_speech_threshold=0.6,
+            compression_ratio_threshold=2.4,
+            temperature=0.0,
+            beam_size=5,
+        )
 
         ass_content = build_ass(
             segments=result["segments"],

@@ -83,8 +83,9 @@
     .drop-name  { margin-top: 12px; font-size: .88rem; color: var(--ok); font-weight: 600; pointer-events: none; }
 
     /* ── Settings grid ──────────────────────────────────────── */
-    .settings-grid { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 16px; }
-    @media (max-width: 620px) { .settings-grid { grid-template-columns: 1fr; } }
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 140px; gap: 16px; }
+    @media (max-width: 680px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 420px) { .settings-grid { grid-template-columns: 1fr; } }
 
     .field { display: flex; flex-direction: column; gap: 7px; }
     label { font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
@@ -248,6 +249,22 @@
       <div class="field">
         <label for="modelSel">Modèle Whisper</label>
         <select id="modelSel"></select>
+      </div>
+      <div class="field">
+        <label for="langSel">Langue</label>
+        <select id="langSel" name="language">
+          <option value="">Auto-détection</option>
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+          <option value="pt">Português</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="zh">中文</option>
+          <option value="ar">العربية</option>
+        </select>
       </div>
       <div class="field">
         <label for="fontSel">Police</label>
@@ -427,6 +444,7 @@
     const fd = new FormData();
     fd.append('audio',        file);
     fd.append('model',        modelSel.value);
+    fd.append('language',     document.getElementById('langSel').value);
     fd.append('font',         fontSel.value);
     fd.append('font_size',    document.getElementById('fontSize').value);
     fd.append('color_before', cBefore.value);
