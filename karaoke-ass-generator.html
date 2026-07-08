@@ -331,46 +331,42 @@ function groupWordsIntoLines(words) {
   return lines;
 }
 
-const TRANSFORMERS_CDN_MIRRORS = [
+const WHISPER_WORKER_SOURCE = `
+const CDN_MIRRORS = [
   "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
   "https://unpkg.com/@xenova/transformers@2.17.2",
   "https://esm.sh/@xenova/transformers@2.17.2",
 ];
 
-async function loadTransformersModule() {
+async function loadTransformers() {
   let lastErr = null;
-  for (const url of TRANSFORMERS_CDN_MIRRORS) {
+  for (const url of CDN_MIRRORS) {
     try {
-      logTranscribe(`Tentative de chargement depuis ${new URL(url).host}...`);
+      self.postMessage({ type: "log", text: "Tentative de chargement depuis " + new URL(url).host + "..." });
       return await import(url);
     } catch (err) {
       lastErr = err;
-      logTranscribe(`  échec (${new URL(url).host}), essai du miroir suivant...`);
+      self.postMessage({ type: "log", text: "  echec (" + new URL(url).host + "), essai du miroir suivant..." });
     }
   }
   throw lastErr;
 }
 
-$("btnTranscribe").addEventListener("click", async () => {
-  if (!state.audioFile) return;
-  const btn = $("btnTranscribe");
-  btn.disabled = true;
-  $("transcribeLog").textContent = "";
+self.onmessage = async (e) => {
+  if (e.data.type !== "transcribe") return;
+  const { audioData, modelId } = e.data;
   try {
-    logTranscribe("Chargement du moteur de transcription (transformers.js)...");
-    const { pipeline } = await loadTransformersModule();
-    const modelId = $("whisperSize").value;
-    logTranscribe(`Téléchargement du modèle ${modelId} (mis en cache par le navigateur ensuite)...`);
+    self.postMessage({ type: "log", text: "Chargement du moteur de transcription (transformers.js)..." });
+    const { pipeline } = await loadTransformers();
+    self.postMessage({ type: "log", text: "Telechargement du modele " + modelId + " (mis en cache ensuite)..." });
     const transcriber = await pipeline("automatic-speech-recognition", modelId, {
       progress_callback: (p) => {
         if (p.status === "progress" && p.file) {
-          logTranscribe(`  ${p.file}: ${Math.round(p.progress || 0)}%`);
+          self.postMessage({ type: "log", text: "  " + p.file + ": " + Math.round(p.progress || 0) + "%" });
         }
       },
     });
-    logTranscribe("Décodage de l'audio (mono 16kHz)...");
-    const audioData = await decodeToMono16k(state.audioFile);
-    logTranscribe("Transcription en cours (peut prendre plusieurs minutes selon la durée)...");
+    self.postMessage({ type: "log", text: "Transcription en cours (peut prendre plusieurs minutes selon la duree)..." });
     const output = await transcriber(audioData, {
       chunk_length_s: 30,
       stride_length_s: 5,
@@ -378,32 +374,74 @@ $("btnTranscribe").addEventListener("click", async () => {
       language: "french",
       task: "transcribe",
     });
-    const words = (output.chunks || []).map((c) => ({
-      text: c.text,
-      start: c.timestamp[0] ?? 0,
-      end: c.timestamp[1] ?? (c.timestamp[0] ?? 0) + 0.3,
-    }));
-    if (!words.length) {
-      logTranscribe("Aucun mot détecté. Essayez un autre fichier ou saisissez les paroles manuellement.");
-    } else {
-      const lines = groupWordsIntoLines(words);
-      $("lyricsText").value = lines.map((l) => l.map((w) => w.text).join(" ")).join("\n");
-      activateLines(lines, `${words.length} mots transcrits et minutés automatiquement sur ${lines.length} lignes. Vous pouvez exporter directement, ou affiner au tap (étape 3) si un mot sonne mal calé.`);
-      logTranscribe(`Terminé : ${words.length} mots détectés sur ${lines.length} lignes, avec minutage automatique.`);
-    }
+    self.postMessage({ type: "done", chunks: output.chunks || [] });
   } catch (err) {
-    console.error(err);
-    const rawMsg = err && err.message ? err.message : String(err);
-    const isNetworkBlocked = /fetch|network|import|CORS|Failed to fetch/i.test(rawMsg);
-    logTranscribe("Erreur pendant la transcription : " + rawMsg);
-    if (isNetworkBlocked) {
-      logTranscribe("Cause probable : cet environnement bloque l'accès à des serveurs externes (aperçu en bac à sable, pare-feu d'entreprise ou bloqueur de publicités).");
-      logTranscribe("Solution : téléchargez ce fichier .html et ouvrez-le directement dans votre navigateur (double-clic), avec une connexion internet normale.");
-    }
-    logTranscribe("En attendant, vous pouvez saisir les paroles manuellement dans le champ ci-dessous.");
-  } finally {
-    btn.disabled = false;
+    self.postMessage({ type: "error", message: err && err.message ? err.message : String(err) });
   }
+};
+`;
+
+function createWhisperWorker() {
+  const blob = new Blob([WHISPER_WORKER_SOURCE], { type: "application/javascript" });
+  return new Worker(URL.createObjectURL(blob));
+}
+
+$("btnTranscribe").addEventListener("click", async () => {
+  if (!state.audioFile) return;
+  const btn = $("btnTranscribe");
+  btn.disabled = true;
+  $("transcribeLog").textContent = "";
+  logTranscribe("Décodage de l'audio (mono 16kHz)...");
+  let audioData;
+  try {
+    audioData = await decodeToMono16k(state.audioFile);
+  } catch (err) {
+    logTranscribe("Erreur de décodage audio : " + (err && err.message ? err.message : String(err)));
+    btn.disabled = false;
+    return;
+  }
+  const modelId = $("whisperSize").value;
+  const worker = createWhisperWorker();
+  worker.onmessage = (e) => {
+    const msg = e.data;
+    if (msg.type === "log") {
+      logTranscribe(msg.text);
+    } else if (msg.type === "done") {
+      const words = msg.chunks.map((c) => ({
+        text: c.text,
+        start: c.timestamp[0] ?? 0,
+        end: c.timestamp[1] ?? (c.timestamp[0] ?? 0) + 0.3,
+      }));
+      if (!words.length) {
+        logTranscribe("Aucun mot détecté. Essayez un autre fichier ou saisissez les paroles manuellement.");
+      } else {
+        const lines = groupWordsIntoLines(words);
+        $("lyricsText").value = lines.map((l) => l.map((w) => w.text).join(" ")).join("\n");
+        activateLines(lines, `${words.length} mots transcrits et minutés automatiquement sur ${lines.length} lignes. Vous pouvez exporter directement, ou affiner au tap (étape 3) si un mot sonne mal calé.`);
+        logTranscribe(`Terminé : ${words.length} mots détectés sur ${lines.length} lignes, avec minutage automatique.`);
+      }
+      worker.terminate();
+      btn.disabled = false;
+    } else if (msg.type === "error") {
+      const isNetworkBlocked = /fetch|network|import|CORS|Failed to fetch/i.test(msg.message);
+      logTranscribe("Erreur pendant la transcription : " + msg.message);
+      if (isNetworkBlocked) {
+        logTranscribe("Cause probable : cet environnement bloque l'accès à des serveurs externes (aperçu en bac à sable, pare-feu d'entreprise ou bloqueur de publicités).");
+        logTranscribe("Solution : téléchargez ce fichier .html et ouvrez-le directement dans votre navigateur (double-clic), avec une connexion internet normale.");
+      }
+      logTranscribe("En attendant, vous pouvez saisir les paroles manuellement dans le champ ci-dessous.");
+      worker.terminate();
+      btn.disabled = false;
+    }
+  };
+  worker.onerror = (err) => {
+    console.error(err);
+    logTranscribe("Erreur inattendue du worker de transcription : " + (err.message || String(err)));
+    logTranscribe("En attendant, vous pouvez saisir les paroles manuellement dans le champ ci-dessous.");
+    worker.terminate();
+    btn.disabled = false;
+  };
+  worker.postMessage({ type: "transcribe", audioData, modelId }, [audioData.buffer]);
 });
 
 $("fontFamily").addEventListener("change", () => {
