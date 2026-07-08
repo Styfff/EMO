@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMOM Timer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <h1>EMOM Timer</h1>
+
+    <section id="setup" class="panel">
+      <label for="duration">Durée de la séquence (minutes)</label>
+      <input type="number" id="duration" min="1" max="120" value="10">
+
+      <button id="startBtn" class="btn primary">Démarrer</button>
+    </section>
+
+    <section id="session" class="panel hidden">
+      <div class="round" id="roundLabel">Round 1 / 10</div>
+      <div class="clock" id="clock">60</div>
+      <div class="total" id="totalLabel">Temps restant : 10:00</div>
+
+      <div class="controls">
+        <button id="pauseBtn" class="btn">Pause</button>
+        <button id="resetBtn" class="btn">Réinitialiser</button>
+      </div>
+    </section>
+
+    <div id="doneMessage" class="done hidden">Séance terminée !</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
