@@ -331,6 +331,26 @@ function groupWordsIntoLines(words) {
   return lines;
 }
 
+const TRANSFORMERS_CDN_MIRRORS = [
+  "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+  "https://unpkg.com/@xenova/transformers@2.17.2",
+  "https://esm.sh/@xenova/transformers@2.17.2",
+];
+
+async function loadTransformersModule() {
+  let lastErr = null;
+  for (const url of TRANSFORMERS_CDN_MIRRORS) {
+    try {
+      logTranscribe(`Tentative de chargement depuis ${new URL(url).host}...`);
+      return await import(url);
+    } catch (err) {
+      lastErr = err;
+      logTranscribe(`  échec (${new URL(url).host}), essai du miroir suivant...`);
+    }
+  }
+  throw lastErr;
+}
+
 $("btnTranscribe").addEventListener("click", async () => {
   if (!state.audioFile) return;
   const btn = $("btnTranscribe");
@@ -338,7 +358,7 @@ $("btnTranscribe").addEventListener("click", async () => {
   $("transcribeLog").textContent = "";
   try {
     logTranscribe("Chargement du moteur de transcription (transformers.js)...");
-    const { pipeline } = await import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2");
+    const { pipeline } = await loadTransformersModule();
     const modelId = $("whisperSize").value;
     logTranscribe(`Téléchargement du modèle ${modelId} (mis en cache par le navigateur ensuite)...`);
     const transcriber = await pipeline("automatic-speech-recognition", modelId, {
@@ -373,8 +393,14 @@ $("btnTranscribe").addEventListener("click", async () => {
     }
   } catch (err) {
     console.error(err);
-    logTranscribe("Erreur pendant la transcription : " + (err && err.message ? err.message : String(err)));
-    logTranscribe("Vous pouvez toujours saisir les paroles manuellement dans le champ ci-dessous.");
+    const rawMsg = err && err.message ? err.message : String(err);
+    const isNetworkBlocked = /fetch|network|import|CORS|Failed to fetch/i.test(rawMsg);
+    logTranscribe("Erreur pendant la transcription : " + rawMsg);
+    if (isNetworkBlocked) {
+      logTranscribe("Cause probable : cet environnement bloque l'accès à des serveurs externes (aperçu en bac à sable, pare-feu d'entreprise ou bloqueur de publicités).");
+      logTranscribe("Solution : téléchargez ce fichier .html et ouvrez-le directement dans votre navigateur (double-clic), avec une connexion internet normale.");
+    }
+    logTranscribe("En attendant, vous pouvez saisir les paroles manuellement dans le champ ci-dessous.");
   } finally {
     btn.disabled = false;
   }
