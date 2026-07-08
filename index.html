@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EMOM Timer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app" id="app">
+      <section class="card" aria-labelledby="title">
+        <p class="eyebrow">Every Minute On the Minute</p>
+        <h1 id="title">EMOM Timer</h1>
+        <p class="intro">
+          Choisissez la durée de votre séquence. Une sonnerie et un changement
+          de couleur marquent chaque nouvelle minute.
+        </p>
+
+        <form class="controls" id="timer-form">
+          <label for="duration">Durée de la séquence</label>
+          <div class="duration-row">
+            <input id="duration" name="duration" type="number" min="1" max="120" value="12" required />
+            <span>minutes</span>
+          </div>
+          <div class="button-row">
+            <button type="submit" id="start-button">Démarrer</button>
+            <button type="button" id="pause-button" disabled>Pause</button>
+            <button type="button" id="reset-button">Réinitialiser</button>
+          </div>
+        </form>
+
+        <section class="timer" aria-live="polite" aria-atomic="true">
+          <p class="status" id="status">Prêt</p>
+          <output class="display" id="display">12:00</output>
+          <p class="minute" id="minute-label">Minute 1 / 12</p>
+          <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+        </section>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
