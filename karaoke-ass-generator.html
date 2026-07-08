@@ -127,7 +127,7 @@
 <div class="wrap">
   <div>
     <h1>🎤 Générateur de sous-titres karaoké (.ass)</h1>
-    <p class="subtitle">Importez un MP3, obtenez les paroles, calez le rythme, choisissez une typographie, exportez un fichier .ass où chaque mot passe du <b style="color:#fff">blanc</b> au <b style="color:#e8e800">jaune (#FFFF00)</b> en cadence.</p>
+    <p class="subtitle">Importez un MP3 : les paroles et leur minutage sont détectés automatiquement, vous choisissez une typographie, et exportez un fichier .ass où chaque mot passe du <b style="color:#fff">blanc</b> au <b style="color:#e8e800">jaune (#FFFF00)</b> en cadence.</p>
   </div>
 
   <div class="card">
@@ -138,7 +138,7 @@
   </div>
 
   <div class="card">
-    <h2><span class="step-num">2</span> Paroles</h2>
+    <h2><span class="step-num">2</span> Paroles &amp; minutage automatique</h2>
     <div class="row" style="margin-bottom:10px;">
       <button id="btnTranscribe" disabled>🧠 Transcrire automatiquement (Whisper, dans le navigateur)</button>
       <select id="whisperSize">
@@ -149,16 +149,16 @@
       <span class="badge">nécessite une connexion internet la 1ère fois</span>
     </div>
     <div class="progress-line" id="transcribeLog"></div>
-    <textarea id="lyricsText" placeholder="Collez ou corrigez ici les paroles : une ligne de sous-titre par ligne de texte.&#10;Ex:&#10;Sous le ciel qui s'embrase&#10;Je marche vers toi"></textarea>
-    <div class="hint">Astuce : une ligne = une phrase affichée à l'écran. Vous pouvez tout retaper à la main, la transcription automatique n'est qu'une aide.</div>
+    <textarea id="lyricsText" placeholder="Cliquez sur « Transcrire automatiquement » pour remplir ce champ à partir du MP3, ou saisissez les paroles ici (une ligne de sous-titre par ligne de texte).&#10;Ex:&#10;Sous le ciel qui s'embrase&#10;Je marche vers toi"></textarea>
+    <div class="hint">La transcription automatique remplit ce champ et calcule aussi le minutage de chaque mot. Vous pouvez corriger le texte : le minutage des mots inchangés est conservé.</div>
     <div class="row" style="margin-top:10px;">
-      <button class="secondary" id="btnApplyLyrics">✅ Valider ces paroles pour le minutage</button>
+      <button class="secondary" id="btnApplyLyrics">✅ Valider mes corrections (conserve le minutage existant)</button>
     </div>
   </div>
 
   <div class="card">
-    <h2><span class="step-num">3</span> Minutage sur le rythme (tap timing)</h2>
-    <p class="hint">Lancez la lecture, puis appuyez sur <kbd>Espace</kbd> (ou cliquez sur "Frapper") exactement au moment où chaque mot est chanté. C'est ce minutage qui fait passer le mot du blanc au jaune en rythme.</p>
+    <h2><span class="step-num">3</span> Minutage sur le rythme (optionnel — pour affiner ou en saisie manuelle)</h2>
+    <p class="hint">Après une transcription automatique, l'export fonctionne déjà directement. Utilisez cette étape uniquement pour recaler un mot au tap, ou si vous avez saisi les paroles à la main : lancez la lecture puis appuyez sur <kbd>Espace</kbd> (ou cliquez sur "Frapper") exactement au moment où chaque mot est chanté.</p>
     <div class="row">
       <button id="btnStartTap" class="secondary" disabled>▶️ Démarrer le minutage</button>
       <button id="btnTap" disabled>👆 Frapper (ou Espace)</button>
@@ -367,10 +367,9 @@ $("btnTranscribe").addEventListener("click", async () => {
       logTranscribe("Aucun mot détecté. Essayez un autre fichier ou saisissez les paroles manuellement.");
     } else {
       const lines = groupWordsIntoLines(words);
-      state.lines = lines;
       $("lyricsText").value = lines.map((l) => l.map((w) => w.text).join(" ")).join("\n");
-      logTranscribe(`Terminé : ${words.length} mots détectés sur ${lines.length} lignes.`);
-      logTranscribe("Le minutage automatique est indicatif : utilisez l'étape 3 pour le caler précisément sur le rythme.");
+      activateLines(lines, `${words.length} mots transcrits et minutés automatiquement sur ${lines.length} lignes. Vous pouvez exporter directement, ou affiner au tap (étape 3) si un mot sonne mal calé.`);
+      logTranscribe(`Terminé : ${words.length} mots détectés sur ${lines.length} lignes, avec minutage automatique.`);
     }
   } catch (err) {
     console.error(err);
@@ -385,6 +384,18 @@ $("fontFamily").addEventListener("change", () => {
   $("customFontWrap").style.display = $("fontFamily").value === "__custom__" ? "flex" : "none";
 });
 
+function activateLines(lines, statusMsg) {
+  state.lines = lines;
+  state.tap.flatWords = [];
+  lines.forEach((line, li) => line.forEach((w, wi) => state.tap.flatWords.push({ text: w.text, lineIndex: li, wordIndex: wi })));
+  state.tap.index = 0;
+  state.tap.active = false;
+  $("btnStartTap").disabled = !state.audioFile;
+  $("btnResetTap").disabled = false;
+  renderTapLine();
+  $("tapStatus").textContent = statusMsg;
+}
+
 $("btnApplyLyrics").addEventListener("click", () => {
   const raw = $("lyricsText").value;
   const rawLines = raw.split("\n").map((l) => l.trim()).filter((l) => l.length);
@@ -392,15 +403,23 @@ $("btnApplyLyrics").addEventListener("click", () => {
     alert("Aucune parole à valider.");
     return;
   }
-  const newLines = rawLines.map((line) => line.split(/\s+/).map((t) => ({ text: t, start: null, end: null })));
-  state.lines = newLines;
-  state.tap.flatWords = [];
-  newLines.forEach((line, li) => line.forEach((w, wi) => state.tap.flatWords.push({ text: w.text, lineIndex: li, wordIndex: wi })));
-  state.tap.index = 0;
-  $("btnStartTap").disabled = !state.audioFile;
-  $("btnResetTap").disabled = false;
-  renderTapLine();
-  $("tapStatus").textContent = `${state.tap.flatWords.length} mots prêts pour le minutage. Cliquez sur "Démarrer le minutage".`;
+  const previousLines = state.lines;
+  const newLines = rawLines.map((line, li) => {
+    const prevLine = previousLines[li];
+    return line.split(/\s+/).map((t, wi) => {
+      const prevWord = prevLine && prevLine[wi];
+      const keepTiming = prevWord && prevWord.text.toLowerCase() === t.toLowerCase() && prevWord.start != null;
+      return { text: t, start: keepTiming ? prevWord.start : null, end: keepTiming ? prevWord.end : null };
+    });
+  });
+  const allTimed = newLines.every((line) => line.every((w) => w.start != null && w.end != null));
+  const anyTimed = newLines.some((line) => line.some((w) => w.start != null));
+  const msg = allTimed
+    ? "Minutage automatique conservé pour tous les mots ✅. Vous pouvez exporter directement."
+    : anyTimed
+      ? "Minutage conservé pour les mots inchangés ; les mots modifiés ou ajoutés doivent être calés à l'étape 3."
+      : `${newLines.reduce((n, l) => n + l.length, 0)} mots prêts pour le minutage. Cliquez sur "Démarrer le minutage".`;
+  activateLines(newLines, msg);
 });
 
 function renderTapLine() {
