@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMOM Timer</title>
+<style>
+  :root {
+    --bg: #1abc9c;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    transition: background-color 0.4s ease;
+    color: #fff;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  label {
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+
+  input[type="number"] {
+    width: 120px;
+    font-size: 1.5rem;
+    text-align: center;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+  }
+
+  .btn {
+    font-size: 1.1rem;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .btn.primary {
+    background: #fff;
+    color: #222;
+    font-weight: 600;
+  }
+
+  .btn.primary:hover {
+    background: #eee;
+  }
+
+  .round {
+    font-size: 1.2rem;
+    opacity: 0.9;
+  }
+
+  .clock {
+    font-size: 6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .total {
+    font-size: 1rem;
+    opacity: 0.85;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+  }
+
+  .done {
+    margin-top: 24px;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <h1>EMOM Timer</h1>
+
+    <section id="setup" class="panel">
+      <label for="duration">Durée de la séquence (minutes)</label>
+      <input type="number" id="duration" min="1" max="120" value="10">
+
+      <button id="startBtn" class="btn primary">Démarrer</button>
+    </section>
+
+    <section id="session" class="panel hidden">
+      <div class="round" id="roundLabel">Round 1 / 10</div>
+      <div class="clock" id="clock">60</div>
+      <div class="total" id="totalLabel">Temps restant : 10:00</div>
+
+      <div class="controls">
+        <button id="pauseBtn" class="btn">Pause</button>
+        <button id="resetBtn" class="btn">Réinitialiser</button>
+      </div>
+    </section>
+
+    <div id="doneMessage" class="done hidden">Séance terminée !</div>
+  </div>
+
+  <script>
+    const COLORS = ['#1abc9c', '#3498db', '#9b59b6', '#e67e22', '#e74c3c', '#2ecc71'];
+
+    const setupPanel = document.getElementById('setup');
+    const sessionPanel = document.getElementById('session');
+    const doneMessage = document.getElementById('doneMessage');
+    const durationInput = document.getElementById('duration');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const roundLabel = document.getElementById('roundLabel');
+    const clock = document.getElementById('clock');
+    const totalLabel = document.getElementById('totalLabel');
+
+    let audioCtx = null;
+    let totalMinutes = 0;
+    let totalSeconds = 0;
+    let running = false;
+    let paused = false;
+    let startTime = 0;
+    let pauseStart = 0;
+    let accumulatedPause = 0;
+    let lastRound = 0;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function beep(frequency, duration, delay = 0) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frequency;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      const startAt = audioCtx.currentTime + delay;
+      gain.gain.setValueAtTime(0, startAt);
+      gain.gain.linearRampToValueAtTime(0.4, startAt + 0.02);
+      gain.gain.linearRampToValueAtTime(0, startAt + duration);
+
+      osc.start(startAt);
+      osc.stop(startAt + duration + 0.02);
+    }
+
+    function playRingSound() {
+      beep(880, 0.18);
+      beep(880, 0.18, 0.22);
+    }
+
+    function playEndSound() {
+      beep(660, 0.15, 0);
+      beep(880, 0.15, 0.18);
+      beep(1046, 0.3, 0.36);
+    }
+
+    function updateColor(round) {
+      const color = COLORS[(round - 1) % COLORS.length];
+      document.body.style.setProperty('--bg', color);
+    }
+
+    function tick() {
+      if (!running || paused) return;
+
+      const elapsedMs = Date.now() - startTime - accumulatedPause;
+      const elapsedSec = Math.floor(elapsedMs / 1000);
+
+      if (elapsedSec >= totalSeconds) {
+        finishSession();
+        return;
+      }
+
+      const round = Math.floor(elapsedSec / 60) + 1;
+      const secInMinute = elapsedSec % 60;
+      const countdown = 60 - secInMinute;
+      const remainingTotal = totalSeconds - elapsedSec;
+
+      clock.textContent = countdown;
+      roundLabel.textContent = `Round ${round} / ${totalMinutes}`;
+      totalLabel.textContent = `Temps restant : ${formatTime(remainingTotal)}`;
+
+      if (round !== lastRound) {
+        lastRound = round;
+        playRingSound();
+        updateColor(round);
+      }
+    }
+
+    function finishSession() {
+      running = false;
+      clock.textContent = '0';
+      totalLabel.textContent = 'Temps restant : 0:00';
+      playEndSound();
+      document.body.style.setProperty('--bg', '#1abc9c');
+      doneMessage.classList.remove('hidden');
+    }
+
+    function startSession() {
+      const value = parseInt(durationInput.value, 10);
+      totalMinutes = Number.isFinite(value) && value > 0 ? value : 10;
+      totalSeconds = totalMinutes * 60;
+
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      running = true;
+      paused = false;
+      startTime = Date.now();
+      accumulatedPause = 0;
+      lastRound = 0;
+      pauseBtn.textContent = 'Pause';
+
+      setupPanel.classList.add('hidden');
+      doneMessage.classList.add('hidden');
+      sessionPanel.classList.remove('hidden');
+    }
+
+    function togglePause() {
+      if (!running) return;
+      if (!paused) {
+        paused = true;
+        pauseStart = Date.now();
+        pauseBtn.textContent = 'Reprendre';
+      } else {
+        paused = false;
+        accumulatedPause += Date.now() - pauseStart;
+        pauseBtn.textContent = 'Pause';
+      }
+    }
+
+    function resetSession() {
+      running = false;
+      paused = false;
+      sessionPanel.classList.add('hidden');
+      doneMessage.classList.add('hidden');
+      setupPanel.classList.remove('hidden');
+      document.body.style.setProperty('--bg', '#1abc9c');
+    }
+
+    startBtn.addEventListener('click', startSession);
+    pauseBtn.addEventListener('click', togglePause);
+    resetBtn.addEventListener('click', resetSession);
+
+    setInterval(tick, 200);
+  </script>
+</body>
+</html>
