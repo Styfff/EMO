@@ -667,11 +667,13 @@ $("btnValidateTiming").addEventListener("click", () => {
 });
 
 function toAssTime(t) {
-  t = Math.max(0, t);
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const s = Math.floor(t % 60);
-  const cs = Math.round((t - Math.floor(t)) * 100);
+  const totalCs = Math.round(Math.max(0, t) * 100);
+  const cs = totalCs % 100;
+  const totalSec = Math.floor(totalCs / 100);
+  const s = totalSec % 60;
+  const totalMin = Math.floor(totalSec / 60);
+  const m = totalMin % 60;
+  const h = Math.floor(totalMin / 60);
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(cs).padStart(2, "0")}`;
 }
 
