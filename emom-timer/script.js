@@ -45,9 +45,46 @@ function beep(frequency, duration, delay = 0) {
   osc.stop(startAt + duration + 0.02);
 }
 
-function playRingSound() {
-  beep(880, 0.18);
-  beep(880, 0.18, 0.22);
+function playMoo() {
+  if (!audioCtx) return;
+  const duration = 1.1;
+  const startAt = audioCtx.currentTime;
+
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 500;
+  filter.Q.value = 1;
+
+  const gain = audioCtx.createGain();
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.frequency.setValueAtTime(160, startAt);
+  osc.frequency.linearRampToValueAtTime(190, startAt + 0.15);
+  osc.frequency.linearRampToValueAtTime(90, startAt + 0.9);
+  osc.frequency.linearRampToValueAtTime(75, startAt + duration);
+
+  const lfo = audioCtx.createOscillator();
+  lfo.frequency.value = 6;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 8;
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc.frequency);
+
+  gain.gain.setValueAtTime(0, startAt);
+  gain.gain.linearRampToValueAtTime(0.5, startAt + 0.08);
+  gain.gain.linearRampToValueAtTime(0.4, startAt + 0.6);
+  gain.gain.linearRampToValueAtTime(0, startAt + duration);
+
+  osc.start(startAt);
+  lfo.start(startAt);
+  osc.stop(startAt + duration + 0.05);
+  lfo.stop(startAt + duration + 0.05);
 }
 
 function playEndSound() {
@@ -83,7 +120,7 @@ function tick() {
 
   if (round !== lastRound) {
     lastRound = round;
-    playRingSound();
+    playMoo();
     updateColor(round);
   }
 }
