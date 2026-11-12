@@ -1,0 +1,23 @@
+// 54 · Tornade de lettres — plaine poussiéreuse : lettres, 1 500 débris et 60 000 grains tournent dans l'entonnoir ; la tornade retombe, les lettres se posent
+import { THREE, word, gpuPoints, paint, matte, pchip, makeCam, fitDist, orbit, clamp, eio, ss, mulberry, rnd, bgLinear , mot } from "../kit.js";
+export function make(K) {
+  const scene = new THREE.Scene(), camera = makeCam(32); scene.environment = K.env; scene.environmentIntensity = 0.45; scene.background = bgLinear([[0, "#3d4a4f"], [0.5, "#7d7660"], [0.78, "#c4a46a"], [1, "#d9b77a"]]); scene.fog = new THREE.Fog(0xb59a6a, 18, 60);
+  scene.add(new THREE.HemisphereLight(0xe8dcc0, 0x6a5232, 0.95)); const sun = new THREE.DirectionalLight(0xffe2b0, 1.9); sun.position.set(-6, 7, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); const sc = sun.shadow.camera; sc.left = -8; sc.right = 8; sc.top = 8; sc.bottom = -8; scene.add(sun);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), matte(0xc29a5c, { roughness: 1 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const TC = 3.5, TCOL = 1.3, CAP = 1.2, w = word(mot(54, "TORNADE"), { font: "typew", cap: CAP, depth: 0.32, bevel: 0.02, pivot: "base" }), r = mulberry(54), I = new THREE.Quaternion(), tw = (h, a0, t) => { const rad = 0.5 + 0.55 * h, a = a0 + t * (5.2 / (rad + 0.3)); return new THREE.Vector3(Math.cos(a) * rad + 0.3 * Math.sin(t * 0.8 + h), h, Math.sin(a) * rad); };
+  const L = w.letters.map((l, i) => { const m = new THREE.Mesh(l.geo, paint([0x1e3a4c, 0xb8432c, 0xf3e4c2][i % 3], { roughness: 0.4 })); m.scale.setScalar(1.25); m.castShadow = true; scene.add(m); return { m, x: l.x, h: 1.2 + i * 0.75, a0: i * 2.2, q0: new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * 6, r() * 6, r() * 6)), d: i * 0.08 }; });
+  const ND = 1500, deb = new THREE.InstancedMesh(new THREE.BoxGeometry(0.12, 0.03, 0.08), matte(0x5a4630, { roughness: 0.9 }), ND), D = [], o = new THREE.Object3D(); deb.castShadow = true; deb.frustumCulled = false; scene.add(deb);
+  for (let i = 0; i < ND; i++) D.push({ h: 0.2 + r() * 6.5, a0: r() * 6.283, v: new THREE.Vector3((r() - 0.5) * 9, 2 + r() * 5, (r() - 0.5) * 9), s: 0.5 + r() * 1.5, rx: r() * 10, ry: r() * 10 });
+  const NG = 60000, U = { uT: { value: 0 }, uPx: { value: 1 }, uC: { value: 0 } }; scene.add(gpuPoints(NG, { aS: [4, rnd(NG * 4, 1, 55)] }, U, `attribute vec4 aS; uniform float uT, uPx, uC; varying float vA;
+    void main(){ float h = aS.x * aS.x * 7., rad = (.5 + .55 * h) * (.7 + .5 * aS.y), a = aS.z * 6.2832 + uT * (5.2 / (rad + .3)); vec3 p = vec3(cos(a) * rad + .3 * sin(uT * .8 + h), h, sin(a) * rad);
+      float k = sst(${TC.toFixed(1)}, ${(TC + TCOL).toFixed(1)}, uT); p.xz *= 1. + 2.5 * k; p.y *= 1. - .85 * k; vA = (.28 + .25 * aS.w) * (1. - k * .9); vec4 mv = modelViewMatrix * vec4(p, 1.); gl_PointSize = max(1.2, (.02 + .04 * aS.w) * uPx / -mv.z); gl_Position = projectionMatrix * mv; }`,
+    "varying float vA; void main(){ float d = length(gl_PointCoord - .5), a = pow(max(0., 1. - 2. * d), 1.5) * vA; if (a < .004) discard; gl_FragColor = vec4(.42, .32, .2, a); }", { blending: THREE.NormalBlending }));
+  const D0 = fitDist(w.width, 32, 0.84), AZ = pchip([[0, -12], [6, 8]]), EL = pchip([[0, -6], [3, 2], [6, 8]]), DS = pchip([[0, D0 * 1.3], [3, D0 * 1.2], [6, D0 * 1.02]]), TY = pchip([[0, 3.2], [3.4, 2.8], [5.2, 0.8], [6, 0.7]]);
+  return { n: 54, title: "Tornade de lettres", style: "Plaine poussiéreuse (sépia)", font: "Courier Prime Bold", cam: "contre-plongée, puis de face au ras du sol", geste: "lettres, débris et 60 000 grains tournent ; la tornade retombe, le mot se pose", scene, camera, accent: "#b8432c", bloom: [0.08, 0.4, 1.3],
+    render(t, K) {
+      U.uT.value = t; U.uPx.value = K.px(camera); U.uC.value = ss(TC, TC + TCOL, t);
+      for (const q of L) { const cur = tw(q.h, q.a0, t), u = eio((t - TC - q.d) / 1.5); q.m.position.lerpVectors(cur, new THREE.Vector3(q.x, 0, 0), u); q.m.quaternion.slerpQuaternions(new THREE.Quaternion().setFromEuler(new THREE.Euler(t * 2 + q.a0, t * 3, t)), I, u); }
+      D.forEach((q, i) => { let p; if (t < TC) p = tw(q.h, q.a0, t); else { const p0 = tw(q.h, q.a0, TC), tau = t - TC; p = new THREE.Vector3(p0.x + q.v.x * tau * 0.5, Math.max(0.02, p0.y + q.v.y * tau * 0.4 - 4.9 * tau * tau), p0.z + q.v.z * tau * 0.5); } o.position.copy(p); o.rotation.set(t * q.rx, t * q.ry, 0); o.scale.setScalar(q.s); o.updateMatrix(); deb.setMatrixAt(i, o.matrix); }); deb.instanceMatrix.needsUpdate = true;
+      orbit(camera, { az: AZ(t), el: EL(t), dist: DS(t), target: [0, TY(t), 0] });
+    } };
+}

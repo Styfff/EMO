@@ -1,0 +1,19 @@
+// 58 · Drapeaux au vent — pavillons de port : le vent tourne, sept drapeaux d'abord par la tranche pivotent et se déploient face caméra
+import { THREE, drawText, measure, canvasTex, inject, matte, chrome, pchip, makeCam, fitDist, orbit, ss, eio, bgLinear , mot } from "../kit.js";
+export function make(K) {
+  const scene = new THREE.Scene(), camera = makeCam(30); scene.environment = K.env; scene.environmentIntensity = 0.6; scene.background = bgLinear([[0, "#2c7fd6"], [0.6, "#8cc8f5"], [0.72, "#d8eefc"], [0.74, "#1d4f7a"], [1, "#0f3456"]]);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x1d4f7a, 1.1)); const sun = new THREE.DirectionalLight(0xfff4e0, 2.2); sun.position.set(-5, 7, 8); scene.add(sun);
+  const TXT = mot(58, "ESCALE"), N = TXT.length, FW = 1.55, FH = 1.08, GAP = 1.8, PH = 3.6, COMBO = [["#0a2a5c", "#ffffff"], ["#e3262f", "#ffffff"], ["#ffcf2e", "#0a2a5c"], ["#ffffff", "#e3262f"], ["#0a2a5c", "#ffcf2e"], ["#e3262f", "#ffcf2e"]], U = { uT: { value: 0 }, uA: { value: 0.1 } }, flags = [];
+  [...TXT].forEach((ch, i) => { const [bgc, ink] = COMBO[i % COMBO.length], tx = canvasTex(512, 352, (g, w, h) => { g.fillStyle = bgc; g.fillRect(0, 0, w, h); g.fillStyle = ink; g.globalAlpha = 0.18; for (let k = 0; k < 6; k++) g.fillRect(0, k * 64, w, 22); g.globalAlpha = 1; const cap = Math.min(250, 300 / measure(ch, "futc", 1, 0)); drawText(g, ch, { font: "futc", cap, x: w / 2, y: h / 2 + cap / 2, fill: ink }); });
+    const geo = new THREE.PlaneGeometry(FW, FH, 60, 20); geo.translate(FW / 2, 0, 0); const ph = { value: i * 0.9 };
+    const m = new THREE.Mesh(geo, inject(new THREE.MeshStandardMaterial({ map: tx, roughness: 0.75, side: THREE.DoubleSide }), { ...U, uP: ph }, { decl: "uniform float uT, uA, uP; float wv(vec2 q){ float x = q.x / " + FW.toFixed(2) + "; return uA * pow(x, 1.2) * (sin(3.2 * q.x * 2.2 - 7. * uT + uP) + .35 * sin(7.1 * q.x + .6 * q.y * 3. - 11. * uT + uP)); }",
+      nrm: "float e = .01, z0 = wv(position.xy); objectNormal = normalize(vec3(-(wv(position.xy + vec2(e, 0.)) - z0) / e, -(wv(position.xy + vec2(0., e)) - z0) / e, 1.));", pos: "transformed.z += z0; transformed.y -= .06 * uA * pow(position.x / " + FW.toFixed(2) + ", 2.);" }));
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, PH, 12), chrome({ roughness: 0.25 })); const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), new THREE.MeshStandardMaterial({ color: 0xd9b252, metalness: 1, roughness: 0.3 }));
+    const piv = new THREE.Group(); piv.position.set((i - (N - 1) / 2) * GAP - FW * 0.45, PH - FH / 2 - 0.1, 0); piv.add(m); pole.position.set(piv.position.x, PH / 2, 0); knob.position.set(piv.position.x, PH + 0.05, 0); scene.add(piv, pole, knob); flags.push({ piv, i }); });
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x0f3456, roughness: 0.3, metalness: 0.4 })); sea.rotation.x = -Math.PI / 2; sea.position.y = -0.4; scene.add(sea);
+  const quay = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 2.2), matte(0xd9cdb8, { roughness: 0.9 })); quay.position.set(0, -0.2, 0); scene.add(quay);
+  const D0 = fitDist(N * GAP, 30, 0.9), AZ = pchip([[0, -40], [3, -18], [6, 0]]), EL = pchip([[0, 9], [6, 6]]), DK = pchip([[0, 0.74], [6, 0.82]]), TX = pchip([[0, -3], [6, 0]]);
+  return { n: 58, title: "Drapeaux au vent", style: "Pavillons de port (marine)", font: "Bebas Neue", cam: "travelling le long du quai", geste: "le vent tourne : les drapeaux pivotent et se déploient face caméra", scene, camera, accent: "#e3262f", bloom: [0.08, 0.4, 1.3], tone: "neutral",
+    render(t) { U.uT.value = t; U.uA.value = 0.12 + 0.13 * ss(1.0, 2.6, t); for (const f of flags) { const u = eio((t - 1.1 - f.i * 0.22) / 1.5); f.piv.rotation.y = -Math.PI / 2 * (1 - u) + 0.08 * Math.sin(t * 1.3 + f.i); }
+      orbit(camera, { az: AZ(t), el: EL(t), dist: D0 * DK(t), target: [TX(t), PH - FH / 2 - 0.2, 0] }); } };
+}
