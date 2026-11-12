@@ -1,0 +1,25 @@
+// 43 · Puzzle qui s'assemble — affiche de voyage : 48 pièces à tenons volent une à une et s'emboîtent ; plongée totale à la fin
+import { THREE, drawText, measure, canvasTex, matte, paint, rig, pchip, makeCam, fitDist, orbit, clamp, eio, mulberry, bgRadial , mot } from "../kit.js";
+export function make(K) {
+  const scene = new THREE.Scene(), camera = makeCam(30); scene.environment = K.env; scene.environmentIntensity = 0.4; scene.background = bgRadial("#1f4f50", "#12302f", "#071615");
+  rig(scene, { key: 2.5, pos: [-5, 11, 6], amb: 0.85, size: 9, map: 4096, soft: 4, ground: 0x14302f });
+  const table = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), matte(0x1a4342, { roughness: 0.92 })); table.rotation.x = -Math.PI / 2; table.receiveShadow = true; scene.add(table);
+  const NCo = 6, NRo = 8, PS = 0.62, BW = NCo * PS, BH = NRo * PS, r = mulberry(43);
+  const img = canvasTex(1024, 1365, (g, w, h) => { const sky = g.createLinearGradient(0, 0, 0, h * 0.7); sky.addColorStop(0, "#f2b134"); sky.addColorStop(1, "#f9dfa0"); g.fillStyle = sky; g.fillRect(0, 0, w, h); const cx = w * 0.5, cy = h * 0.46;
+    g.fillStyle = "#ed553b"; g.beginPath(); g.arc(cx, cy, 240, 0, 7); g.fill(); g.strokeStyle = "rgba(237,85,59,0.55)"; g.lineWidth = 12; for (let i = 1; i < 5; i++) { g.beginPath(); g.arc(cx, cy, 240 + i * 46, 0, 7); g.stroke(); }
+    [["#20639b", 0.62, 40, 1.1], ["#173f5f", 0.72, 54, 0.8], ["#3caea3", 0.82, 34, 1.6], ["#0e5a54", 0.9, 26, 2.2]].forEach(([c, y, a, f]) => { g.fillStyle = c; g.beginPath(); g.moveTo(0, h); for (let x = 0; x <= w; x += 8) g.lineTo(x, h * y + a * Math.sin((x / w) * 6.283 * f + y * 9)); g.lineTo(w, h); g.closePath(); g.fill(); });
+    const INK = "#173f5f"; drawText(g, mot(43, "PUZZLE"), { font: "typew", cap: (w - 130) / measure(mot(43, "PUZZLE"), "typew", 1, 0.04), x: w / 2, y: 290, fill: INK }); drawText(g, "48 PIÈCES · UNE IMAGE", { font: "typew", cap: 34, x: w / 2, y: 356, fill: INK, track: 0.14 }); });
+  img.wrapS = img.wrapT = THREE.RepeatWrapping; img.repeat.set(1 / BW, 1 / BH); img.offset.set(0.5, 0.5); img.anisotropy = 8;
+  const VS = [], HS = []; for (let i = 0; i < NCo - 1; i++) { VS[i] = []; for (let j = 0; j < NRo; j++) VS[i][j] = r() < 0.5 ? 1 : -1; } for (let i = 0; i < NCo; i++) { HS[i] = []; for (let j = 0; j < NRo - 1; j++) HS[i][j] = r() < 0.5 ? 1 : -1; }
+  const edge = (out, ax, ay, bx, by, s) => { const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy), nx = dy / L, ny = -dx / L, NK = s ? 26 : 1; for (let k = 0; k < NK; k++) { const x = k / NK, gg = Math.exp(-Math.pow((x - 0.5) / 0.12, 2)), xp = x + (x - 0.5) * (2.2 * gg * gg - 1.6 * gg), h = s * 0.25 * L * gg; out.push([ax + dx * xp + nx * h, ay + dy * xp + ny * h]); } };
+  const face = new THREE.MeshStandardMaterial({ map: img, roughness: 0.62 }), side = matte(0xe8dfc9, { roughness: 0.8 }), P = [];
+  for (let i = 0; i < NCo; i++) for (let j = 0; j < NRo; j++) { const x0 = -BW / 2 + i * PS, y0 = -BH / 2 + j * PS, x1 = x0 + PS, y1 = y0 + PS, pts = []; edge(pts, x0, y0, x1, y0, j > 0 ? -HS[i][j - 1] : 0); edge(pts, x1, y0, x1, y1, i < NCo - 1 ? VS[i][j] : 0); edge(pts, x1, y1, x0, y1, j < NRo - 1 ? HS[i][j] : 0); edge(pts, x0, y1, x0, y0, i > 0 ? -VS[i - 1][j] : 0);
+    const sh = new THREE.Shape(pts.map((p) => new THREE.Vector2(p[0], p[1]))), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, geo = new THREE.ExtrudeGeometry(sh, { depth: 0.07, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.006, bevelSegments: 2, curveSegments: 4 }); geo.translate(-cx, -cy, 0);
+    const m = new THREE.Mesh(geo, [face, side]); m.castShadow = true; m.receiveShadow = true; scene.add(m); const a = r() * 6.283, rad = 3.6 + r() * 2.8; P.push({ m, tx: cx, tz: -cy, sx: Math.cos(a) * rad * 0.8, sz: Math.sin(a) * rad, ry: r() * 6.283, lift: 0.9 + r() * 0.8 }); }
+  const ord = P.map((_, i) => i); for (let i = ord.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [ord[i], ord[j]] = [ord[j], ord[i]]; } ord.forEach((pi, k) => { P[pi].t0 = 0.35 + k * 0.08; });
+  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2), qY = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
+  const D0 = fitDist(BW + 0.5, 30, 0.9), AZ = pchip([[0, -32], [2.6, -16], [4.8, 0], [6, 0]]), EL = pchip([[0, 30], [2.6, 44], [4.9, 87], [6, 88.5]]), DK = pchip([[0, 1.45], [3, 1.3], [5, 1.02], [6, 0.98]]);
+  return { n: 43, title: "Puzzle qui s'assemble", style: "Affiche de voyage", font: "Courier Prime Bold", cam: "trois quarts, puis plongée totale", geste: "48 pièces à tenons volent une à une et s'emboîtent", scene, camera, accent: "#f2b134", bloom: [0.1, 0.4, 1.3], tone: "neutral",
+    render(t) { for (const q of P) { const u = eio(clamp((t - q.t0) / 0.6)); q.m.position.set(q.sx + (q.tx - q.sx) * u, 0.09 + Math.sin(Math.PI * u) * q.lift, q.sz + (q.tz - q.sz) * u); qY.setFromAxisAngle(Y, q.ry * (1 - u)); q.m.quaternion.copy(qY).multiply(qX); }
+      orbit(camera, { az: AZ(t), el: EL(t), dist: D0 * DK(t), target: [0, 0, 0] }); } };
+}

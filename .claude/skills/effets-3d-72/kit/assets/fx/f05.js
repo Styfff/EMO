@@ -1,0 +1,23 @@
+// 5 · Rassemblement en orbite — verre : lettres réfractantes qui volent à leur place, 280 perles de verre aspirées par le mot
+import { THREE, word, pchip, makeCam, fitDist, orbit, eo, eio, clamp, mulberry, bg , mot } from "../kit.js";
+export function make(K) {
+  const scene = new THREE.Scene(), camera = makeCam(30); scene.environment = K.env; scene.environmentIntensity = 0.9;
+  scene.background = bg((g, w, h) => { g.fillStyle = "#0a0b2e"; g.fillRect(0, 0, w, h); g.filter = "blur(46px)"; [["#6a3df0", 0.25, 0.3, 150], ["#ff4f9a", 0.78, 0.42, 140], ["#ffb347", 0.42, 0.74, 130], ["#18c8ff", 0.85, 0.85, 90]].forEach(([c, x, y, r]) => { g.fillStyle = c; g.beginPath(); g.arc(x * w, y * h, r, 0, 7); g.fill(); }); g.filter = "none"; g.fillStyle = "rgba(6,6,36,0.5)"; g.fillRect(0, 0, w, h); });
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x4030a0, 1.2)); const dl = new THREE.DirectionalLight(0xffffff, 2.5); dl.position.set(-3, 6, 8); scene.add(dl);
+  const orbs = [[0xff4f9a, -2.0, 0.5, -2.4, 1.0], [0xffb347, 2.0, -0.4, -2.8, 1.15], [0x18c8ff, 0.3, 0.9, -3.4, 0.75]].map(([c, x, y, z, s]) => { const m = new THREE.Mesh(new THREE.SphereGeometry(s, 40, 24), new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.25, clearcoat: 1, emissive: c, emissiveIntensity: 0.25 })); m.position.set(x, y, z); scene.add(m); return m; });
+  const glass = (tint) => new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.82, thickness: 1.6, roughness: 0.26, ior: 1.5, attenuationColor: tint, attenuationDistance: 2.6, emissive: 0xffffff, emissiveIntensity: 0.05, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 2.8, iridescence: 1, iridescenceIOR: 1.35, iridescenceThicknessRange: [200, 700], specularIntensity: 1 });
+  const w = word(mot(5, "ENSEMBLE"), { font: "futura", cap: 0.86, depth: 0.46, bevel: 0.04, bevelSeg: 5 }), r = mulberry(7), L = [], I = new THREE.Quaternion(), order = [3, 6, 0, 5, 2, 7, 1, 4], TINT = [0xffffff, 0xffb3d4, 0xb9e2ff];
+  for (const l of w.letters) { const a = r() * 6.283, rr = 5 + r() * 2.5, o = { tgt: new THREE.Vector3(l.x, 0, 0), p0: new THREE.Vector3(Math.cos(a) * rr, (r() - 0.4) * 5, Math.sin(a) * rr * 0.8 + 1.5), q0: new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 7, (r() - 0.5) * 7, (r() - 0.5) * 7)), d: 0.4 + order[l.i] * 0.1, side: new THREE.Vector3(r() - 0.5, r() - 0.2, r() - 0.5).normalize(), m: new THREE.Mesh(l.geo, glass(TINT[l.i % 3])) }; { const hull = new THREE.Mesh(l.geo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0.92, 0.92, 0.98), side: THREE.BackSide })); hull.scale.set(1.03, 1.025, 1.01); o.m.add(hull); } scene.add(o.m); L.push(o); }
+  const NB = 280, beads = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 20, 14), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, thickness: 1.2, roughness: 0.05, ior: 1.5, iridescence: 1, iridescenceIOR: 1.35, envMapIntensity: 2.4 }), NB), B = []; beads.frustumCulled = false; scene.add(beads);
+  for (let i = 0; i < NB; i++) B.push({ R: 2.6 + r() * 4.2, a: r() * 6.283, w: (0.8 + r() * 1.6) * (r() < 0.5 ? 1 : -1), inc: (r() - 0.5) * 1.6, s: 0.04 + r() * r() * 0.16, x: (r() - 0.5) * w.width, d: r() * 0.9 });
+  const D0 = fitDist(w.width, 30, 0.82), o3 = new THREE.Object3D();
+  const AZ = pchip([[0, 82], [3.3, 3], [6, -7]]), EL = pchip([[0, 18], [3.3, 6], [6, 3]]), DK = pchip([[0, 1.55], [3.3, 1.02], [6, 0.95]]);
+  return { n: 5, title: "Rassemblement en orbite", style: "Glassmorphisme", font: "Jost Bold", cam: "orbite 82° → 0, arrive de face quand le mot se forme", geste: "lettres de verre et 280 perles aspirées par le mot", scene, camera, accent: "#ff7ab8", bloom: [0.3, 0.7, 1.15],
+    render(t) {
+      for (const q of L) { const u = clamp((t - q.d) / 2.1), e = eo(u), b = e + 0.06 * Math.sin(Math.PI * clamp((u - 0.55) / 0.45)) * (1 - u); q.m.position.lerpVectors(q.p0, q.tgt, b).addScaledVector(q.side, Math.sin(Math.PI * e) * 1.4 * (1 - e)); q.m.quaternion.slerpQuaternions(q.q0, I, b); }
+      B.forEach((b, i) => { const u = eio((t - 0.3 - b.d) / 2.6), R = b.R * (1 - u), a = b.a + b.w * t * (1 + 2 * u);
+        o3.position.set(Math.cos(a) * R + b.x * u, Math.sin(a) * Math.sin(b.inc) * R, Math.sin(a) * Math.cos(b.inc) * R); o3.scale.setScalar(b.s * (1 - u * u * u) + 1e-5); o3.updateMatrix(); beads.setMatrixAt(i, o3.matrix); }); beads.instanceMatrix.needsUpdate = true;
+      orbs.forEach((m, i) => { m.position.y = [0.5, -0.4, 0.9][i] + 0.35 * Math.sin(t * 0.9 + i * 2.1); m.position.x = [-2.0, 2.0, 0.3][i] + 0.5 * Math.cos(t * 0.6 + i * 1.3); });
+      orbit(camera, { az: AZ(t), el: EL(t), dist: D0 * DK(t), target: [0, 0.05, 0] });
+    } };
+}

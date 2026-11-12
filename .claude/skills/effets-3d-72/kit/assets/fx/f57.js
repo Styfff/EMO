@@ -1,0 +1,27 @@
+// 57 · Bulles qui éclatent — pastel d'enfance : chaque lettre monte dans une bulle irisée, la bulle éclate en gouttelettes, la lettre tombe à sa place et rebondit
+import { THREE, word, gpuPoints, paint, pchip, makeCam, fitDist, orbit, clamp, ss, mulberry, rnd, bgLinear , mot } from "../kit.js";
+export function make(K) {
+  const scene = new THREE.Scene(), camera = makeCam(30); scene.environment = K.env; scene.environmentIntensity = 0.6; scene.background = bgLinear([[0, "#a9d8ff"], [0.6, "#ffd6ea"], [1, "#fff1c9"]]);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xffd6ea, 1.2)); const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(-3, 6, 8); scene.add(key);
+  const BS = { vertexShader: "varying vec3 vN; varying vec3 vV; varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - w.xyz); gl_Position = projectionMatrix * viewMatrix * w; }",
+    fragmentShader: "uniform float uO; varying vec3 vN; varying vec3 vV; varying vec3 vW; void main(){ float f = 1. - abs(dot(normalize(vN), normalize(vV))), h = f * 2.4 + vW.y * .8; vec3 c = .55 + .45 * cos(6.2832 * (h + vec3(0., .33, .67))); float sp = pow(max(dot(reflect(-normalize(vec3(-.4, .7, .6)), normalize(vN)), normalize(vV)), 0.), 60.); gl_FragColor = vec4(c * (.4 + 1.2 * f) + vec3(1.6) * sp, (f * f * .85 + sp + .04) * uO); }",
+    transparent: true, depthWrite: false };
+  const CAP = 1.05, w = word(mot(57, "BULLES"), { font: "round", cap: CAP, depth: 0.35, bevel: 0.05, pivot: "base", bevelSeg: 5 }), PAL = [0xff6fa8, 0x6ec6ff, 0xffc94d, 0x8be3b8, 0xb79cff, 0xff8a5c], r = mulberry(57), L = [], RB = 0.85;
+  w.letters.forEach((l, i) => { const m = new THREE.Mesh(l.geo, paint(PAL[i % PAL.length], { roughness: 0.25 })); scene.add(m); const b = new THREE.Mesh(new THREE.SphereGeometry(RB, 48, 32), new THREE.ShaderMaterial({ ...BS, uniforms: { uO: { value: 1 } } })); scene.add(b); L.push({ m, b, x: l.x, i, tb: 1.7 + i * 0.32, ph: r() * 6 }); });
+  const NBG = 140, bg = []; for (let i = 0; i < NBG; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.ShaderMaterial({ ...BS, uniforms: { uO: { value: 0.65 } } })); scene.add(b); bg.push({ b, x: (r() - 0.5) * 16, z: -2 - r() * 9, s: 0.08 + r() * r() * 0.5, v: 0.3 + r() * 0.6, y0: r() * 12, ph: r() * 6 }); }
+  const ND = 9000, aI = new Float32Array(ND * 3); for (let i = 0; i < ND; i++) { const q = L[i % L.length]; aI.set([q.x, q.tb, i % L.length], i * 3); }
+  const U = { uT: { value: 0 }, uPx: { value: 1 } }; scene.add(gpuPoints(ND, { aI: [3, aI], aS: [4, rnd(ND * 4, 1, 58)] }, U, `attribute vec3 aI; attribute vec4 aS; uniform float uT, uPx; varying vec3 vC; varying float vA;
+    void main(){ float tau = uT - aI.y, th = aS.x * 6.2832, ph = acos(2. * aS.y - 1.); vec3 d = vec3(sin(ph) * cos(th), cos(ph), sin(ph) * sin(th)), c0 = vec3(aI.x, ${(CAP * 0.5 + 2.2).toFixed(2)}, 0.); vec3 p = c0 + d * (${RB} + (1.2 + 2.6 * aS.z) * tau) + vec3(0., -6., 0.) * tau * tau;
+      vA = step(0., tau) * (1. - sst(.25, .7, tau)); vC = .6 + .4 * cos(6.2832 * (aS.w + vec3(0., .33, .67))); vec4 mv = modelViewMatrix * vec4(p, 1.); gl_PointSize = max(1.3, (.02 + .02 * aS.w) * uPx / -mv.z); gl_Position = projectionMatrix * mv; }`, "varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5); if (d > .5) discard; gl_FragColor = vec4(vC * vA * 1.4, 1.); }"));
+  const bounce = (tau) => { const g = 18, h = 2.2, T0 = Math.sqrt(2 * h / g); if (tau < T0) return h - 0.5 * g * tau * tau; let ts = T0, v = g * T0 * 0.42; for (let k = 0; k < 3; k++) { const d = 2 * v / g; if (tau < ts + d) { const u = tau - ts; return v * u - 0.5 * g * u * u; } ts += d; v *= 0.42; } return 0; };
+  const D0 = fitDist(w.width, 30, 0.84), AZ = pchip([[0, -10], [6, 6]]), EL = pchip([[0, 4], [6, 7]]), DK = pchip([[0, 1.1], [6, 1.0]]), TY = pchip([[0, 1.9], [3, 1.6], [6, 1.0]]);
+  return { n: 57, title: "Bulles qui éclatent", style: "Pastel d'enfance", font: "Nunito Black", cam: "de face, descend avec les lettres", geste: "chaque lettre monte dans une bulle irisée qui éclate ; elle tombe et rebondit", scene, camera, light: true, accent: "#ff6fa8", bloom: [0.15, 0.5, 1.25], tone: "neutral",
+    render(t, K) {
+      U.uT.value = t; U.uPx.value = K.px(camera);
+      for (const q of L) { const rise = clamp((t - 0.1 - q.i * 0.12) / (q.tb - 0.1 - q.i * 0.12)), yb = -3.2 + (CAP * 0.5 + 2.2 + 3.2) * (1 - Math.pow(1 - rise, 2)) + 0.12 * Math.sin(t * 3 + q.ph), xb = q.x + 0.15 * Math.sin(t * 2.2 + q.ph) * (1 - rise * 0.5), pop = t - q.tb;
+        q.b.visible = pop < 0.08; q.b.position.set(xb, yb, 0); q.b.scale.setScalar(1 + (pop > 0 ? 0.25 * pop / 0.08 : 0.04 * Math.sin(t * 7 + q.ph)));
+        if (pop < 0) { q.m.position.set(xb, yb - CAP * 0.5, 0); q.m.rotation.set(0.25 * Math.sin(t * 2 + q.ph), 0.4 * Math.sin(t * 1.4 + q.ph), 0.2 * Math.sin(t * 1.7 + q.ph)); } else { const yy = bounce(pop); q.m.position.set(q.x + (xb - q.x) * Math.exp(-pop * 6), yy, 0); const k = Math.exp(-pop * 2.2), tb = q.tb; q.m.rotation.set(0.25 * Math.sin(tb * 2 + q.ph) * k, 0.4 * Math.sin(tb * 1.4 + q.ph) * k, 0.2 * Math.sin(tb * 1.7 + q.ph) * k); } }
+      for (const s of bg) { s.b.position.set(s.x + 0.3 * Math.sin(t + s.ph), ((s.y0 + s.v * t) % 12) - 3, s.z); s.b.scale.setScalar(s.s); }
+      orbit(camera, { az: AZ(t), el: EL(t), dist: D0 * DK(t), target: [0, TY(t), 0] });
+    } };
+}

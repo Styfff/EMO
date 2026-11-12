@@ -1,0 +1,23 @@
+// 30 · Nuage LiDAR — fausses couleurs : un balayage laser révèle 230 000 points (lettres, sol en anneaux, mur) ; les ombres du scan restent vides
+import { THREE, maskPoints, wordContours, gpuPoints, matte, pchip, makeCam, fitDist, orbit, mulberry, measure , mot } from "../kit.js";
+export function make(K) {
+  const scene = new THREE.Scene(), camera = makeCam(30); scene.background = new THREE.Color(0x04060b);
+  const TXT = mot(30, "LIDAR"), FONT = "menlo", CAP = 1.7, DEP = 0.6, W = measure(TXT, FONT, CAP, 0.04), S = [0, 1.7, 6.5], r = mulberry(12), P = [], YB = CAP / 2;
+  const push = (x, y, z) => P.push(x + (r() - 0.5) * 0.012, y + (r() - 0.5) * 0.012, z + (r() - 0.5) * 0.012);
+  { const F = maskPoints(TXT, 80000, { font: FONT, width: W, res: 1500, seed: 3 }); for (let i = 0; i < 80000; i++) push(F[i * 3], F[i * 3 + 1] + YB, DEP / 2); }
+  { const C = wordContours(TXT, { font: FONT, cap: CAP, step: 0.008 }), all = []; for (const c of C) for (const p of c.pts) all.push(p); for (let i = 0; i < 45000; i++) { const p = all[(r() * all.length) | 0]; push(p[0], p[1] + YB, (r() - 0.5) * DEP); } }
+  const inShadow = (x, y, z) => { if (z > -DEP / 2) return false; const s = (S[2] - 0) / (S[2] - z), xx = S[0] + (x - S[0]) * s, yy = S[1] + (y - S[1]) * s; return Math.abs(xx) < W / 2 && yy > 0 && yy < CAP; };
+  for (let k = 0; k < 46; k++) { const phi = (6 + k * 1.25) * Math.PI / 180, rr = S[1] / Math.tan(phi); for (let j = 0; j < 1500; j++) { const a = (r() - 0.5) * 2.5, x = S[0] + Math.sin(a) * rr, z = S[2] - Math.cos(a) * rr; if (z < -5.4 || Math.abs(x) > 9) continue; if (Math.abs(x) < W / 2 + 0.02 && Math.abs(z) < DEP / 2) continue; if (!inShadow(x, 0.001, z)) push(x, 0, z); } }
+  for (let k = 0; k < 60; k++) { const y = 0.05 + k * 0.1; for (let j = 0; j < 800; j++) { const x = (r() - 0.5) * 18; if (!inShadow(x, y, -5.5)) push(x, y, -5.5); } }
+  const N = P.length / 3, pos = new Float32Array(P), U = { uT: { value: 0 }, uSw: { value: -2 }, uPx: { value: 1 } };
+  scene.add(gpuPoints(N, { aP: [3, pos] }, U, `attribute vec3 aP; uniform float uSw, uPx; varying vec3 vC; varying float vA;
+    void main(){ float az = atan(aP.x - ${S[0].toFixed(1)}, ${S[2].toFixed(1)} - aP.z), d = length(aP - vec3(0., 1.7, 6.5)), k = clamp((d - 5.) / 9., 0., 1.), fr = sst(.0, .06, uSw - az);
+      vC = mix(mix(vec3(1.3, 1.1, .2), vec3(.1, 1.1, 1.2), sst(0., .45, k)), vec3(.12, .25, 1.3), sst(.45, 1., k)) + vec3(2., .9, .3) * (1. - sst(.0, .12, uSw - az)) * fr; vA = fr;
+      vec4 mv = modelViewMatrix * vec4(aP, 1.); gl_PointSize = max(1.3, .017 * uPx / -mv.z); gl_Position = projectionMatrix * mv; }`,
+    "varying vec3 vC; varying float vA; void main(){ if (vA < .01 || length(gl_PointCoord - .5) > .5) discard; gl_FragColor = vec4(vC * vA * .85, 1.); }", { blending: THREE.NormalBlending }));
+  const fan = new THREE.Mesh(new THREE.PlaneGeometry(16, 9), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 0.5, 0.15), transparent: true, opacity: 0.03, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); fan.geometry.translate(8, 3.2, 0); const fp = new THREE.Group(); fp.position.set(S[0], 0, S[2]); fp.add(fan); scene.add(fp);
+  const dev = new THREE.Group(); { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.34, 20), matte(0x30363f, { roughness: 0.4, metalness: 0.6 })); b.position.y = S[1]; const led = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 0.9, 0.3) })); led.position.set(0, S[1], -0.17); dev.add(b, led); for (let i = 0; i < 3; i++) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.75, 6), matte(0x20242a)); leg.position.set(Math.sin(i * 2.094) * 0.28, 0.8, Math.cos(i * 2.094) * 0.28); leg.rotation.set(Math.cos(i * 2.094) * 0.33, 0, -Math.sin(i * 2.094) * 0.33); dev.add(leg); } } dev.position.set(S[0], 0, S[2]); scene.add(dev);
+  const D0 = fitDist(W, 30, 0.8), SW = pchip([[0, -1.3], [0.4, -1.3], [3.7, 1.3], [6, 1.3]]), AZ = pchip([[0, -34], [3.2, 26], [5.2, 4], [6, 0]]), EL = pchip([[0, 16], [3.2, 12], [6, 7]]), DK = pchip([[0, 1.35], [3.4, 1.25], [6, 1.02]]);
+  return { n: 30, title: "Nuage LiDAR", style: "Données (fausses couleurs)", font: "JetBrains Mono ExtraBold", cam: "orbite lente autour du nuage, puis de face", geste: `le balayage laser révèle ${N.toLocaleString("fr-FR")} points ; les ombres restent vides`, scene, camera, accent: "#ffd23f", bloom: [0.3, 0.5, 1.0],
+    render(t, K) { const sw = SW(t); U.uSw.value = sw; U.uPx.value = K.px(camera); fp.rotation.y = Math.PI / 2 - sw; fan.visible = false; orbit(camera, { az: AZ(t), el: EL(t), dist: D0 * DK(t), target: [0, 0.8, 0] }); } };
+}
