@@ -1,0 +1,27 @@
+1
+00:00:01,600 --> 00:00:05,800
+Au sommaire, l’intelligence artificielle dans les salons et les congrès.
+
+2
+00:00:06,100 --> 00:00:12,950
+Selon l’UFI, 87 % des entreprises de salons utilisent désormais l’intelligence artificielle.
+
+3
+00:00:13,000 --> 00:00:15,100
+Quatre points de plus en six mois.
+
+4
+00:00:17,100 --> 00:00:22,450
+Les organisateurs sont en tête : 23 % ont atteint les stades les plus avancés.
+
+5
+00:00:25,100 --> 00:00:31,070
+Dans les congrès, 91 % des organisateurs s’en servent déjà, selon la PCMA.
+
+6
+00:00:31,100 --> 00:00:35,250
+Mais seuls 15 % en font un véritable levier stratégique.
+
+7
+00:00:37,200 --> 00:00:39,200
+Voilà pour l’essentiel.
