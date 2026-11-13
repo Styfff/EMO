@@ -192,7 +192,7 @@ function pushUp(t, t0, s, x, y, font, col, id, clipH = 200, align = 'left') { co
 
 // ① MARCHÉ — A : photo + tableau à volets 83 % → 87 %
 function shot1A(t) {
-  if (IM.hall) { photo(IM.hall, IM.hall.width * .5, IM.hall.height * .5, lerp(1.0, 1.08, seg(t, 6, 12.5)) * Math.max(W / IM.hall.width, H / IM.hall.height));
+  if (IM.hall) { ctx.save(); ctx.filter = 'blur(9px) brightness(.8)'; photo(IM.hall, IM.hall.width * .5, IM.hall.height * .5, lerp(1.0, 1.08, seg(t, 6, 12.5)) * Math.max(W / IM.hall.width, H / IM.hall.height)); ctx.restore();   // flou : aucun logo lisible, aucun visage net
     const g = ctx.createLinearGradient(0, 0, 1500, 0); g.addColorStop(0, 'rgba(14,16,19,.92)'); g.addColorStop(.55, 'rgba(14,16,19,.62)'); g.addColorStop(1, 'rgba(14,16,19,.3)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     vignette(.55); grain(t); } else studioBg(t);
   ctx.save(); ctx.translate(0, 60);
@@ -354,7 +354,7 @@ window.DUR = DUR; window.EV = EV; window.render = render; window.TEXTS = t => { 
 (async () => {
   makeGrain();
   if (PHOTO) { try { IM.hall = await loadImg(PHOTO); } catch (e) { IM.hall = null; } }
-  if (IM.hall) CREDIT_LINES.push('Photo d’illustration : « Lisbon Web Summit 2017 », Carlos Rodrigues / Web Summit, CC BY 2.0, via Wikimedia Commons (passée en duotone)');
+  if (IM.hall) CREDIT_LINES.push('Photo d’illustration : « Lisbon Web Summit 2017 », Carlos Rodrigues / Web Summit, CC BY 2.0, via Wikimedia Commons (duotone, floutée)');
   await Promise.all([F.b8(40), F.b6(40), F.b6i(40), F.mono(40)].map(f => document.fonts.load(f, 'Aa é %')));
   render(0); window.READY = true;
 })();
