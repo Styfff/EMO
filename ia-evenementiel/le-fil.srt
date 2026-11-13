@@ -7,7 +7,7 @@ Neuf heures. 2 000 visiteurs, et Léa ne connaît personne.
 Mais son badge sait déjà ce qu’elle vient chercher.
 
 3
-00:00:12,300 --> 00:00:16,500
+00:00:12,300 --> 00:00:17,700
 L’IA lui trace un chemin : la bonne conférence, sans file d’attente.
 
 4
@@ -23,5 +23,5 @@ Aucune importance : la traduction suit la conversation, en direct.
 Le soir venu, chaque échange l’attend, résumé dans son carnet.
 
 7
-00:00:41,300 --> 00:00:45,400
+00:00:41,300 --> 00:00:46,500
 L’IA trace le chemin. Les rencontres, elles, restent humaines.

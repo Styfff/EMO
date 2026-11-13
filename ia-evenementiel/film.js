@@ -302,7 +302,7 @@ EV.push({ t: .15, type: 'sketchFig', d: .85 }, { t: .45, type: 'write', d: .9 },
   { t: 16.4, type: 'write', d: .7 }, { t: 18.75, type: 'tick' }, { t: 18.8, type: 'bloom', v: .6 }, { t: 20.4, type: 'propose' }, { t: 20.7, type: 'propose' }, { t: 21.0, type: 'propose' },
   { t: 21.55, type: 'solid' }, { t: 21.95, type: 'bloom', v: .7 }, { t: 22.35, type: 'turn' }, { t: 24.0, type: 'shake' }, { t: 24.02, type: 'bloom', v: 1 },
   { t: 27.4, type: 'scribble', d: .9 }, { t: 28.4, type: 'swipe' }, { t: 28.7, type: 'write', d: .8 }, { t: 29.2, type: 'write', d: .5 }, { t: 30.4, type: 'write', d: .9 },
-  { t: 33.0, type: 'silence' }, { t: 34.55, type: 'bloom', v: 1.1, d: 3.2 }, { t: 36.2, type: 'write', d: .7 }, { t: 37.0, type: 'write', d: .7 }, { t: 38.6, type: 'erase', d: 1.6 },
+  { t: 33.0, type: 'silence' }, { t: 34.55, type: 'bloom', v: .45, d: 3.2 }, { t: 36.2, type: 'write', d: .7 }, { t: 37.0, type: 'write', d: .7 }, { t: 38.6, type: 'erase', d: 1.6 },
   { t: 41.3, type: 'write', d: .7 }, { t: 42.1, type: 'write', d: .8 });
 for (let k = 0; k < 12; k++) EV.push({ t: 12.5 + k * .5, type: 'step' });
 EV.push({ t: 22.5, type: 'step' }, { t: 23.0, type: 'step' });

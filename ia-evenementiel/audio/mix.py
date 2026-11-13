@@ -58,8 +58,8 @@ for b in range(18, 22): waltz(b, .7, brushes=False, walk=False)
 line(18, [(0, 'E5', 2)], .45); line(19, [(0, 'F5', 1), (1, 'E5', 1), (2, 'D5', 1)], .45); line(20, [(0, 'C5', 2.5)], .42); line(21, [(0, 'D5', 1), (1, 'E5', 1.5)], .42)
 # 22 : silence (33,0–34,5)
 # 23–26 : le soir, thème complet
-for b in range(23, 27): waltz(b, 1.05); line(b, TH[(b - 23) % 4], .64)
-for p in ['F4', 'A4', 'C5', 'E5']: col.append((34.5, 'vibraphone', p, 2.5, .4, -.1))
+for b in range(23, 27): waltz(b, .8 if b < 26 else 1.0); line(b, TH[(b - 23) % 4], .5 if b < 26 else .62)
+for p in ['F4', 'A4', 'C5', 'E5']: col.append((34.5, 'vibraphone', p, 2.5, .22, -.1))
 # 27–29 : clarinette seule, accord final tenu à 43,5
 line(27, [(0, 'C5', 1.5), (1.5, 'D5', .5), (2, 'E5', 1)], .5); line(28, [(0, 'F5', 1), (1, 'E5', 1), (2, 'D5', 1)], .48)
 bass.append((bt(27), 'jazz_bass', 'D2', 1.4, .5, 0)); bass.append((bt(28), 'jazz_bass', 'G2', 1.4, .5, 0))
