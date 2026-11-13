@@ -1,0 +1,56 @@
+[
+{
+"id": "V1",
+"text": "Au sommaire, l'intelligence artificielle dans les salons et les congrès.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.05
+},
+{
+"id": "V2",
+"text": "Selon l'U F I, quatre-vingt-sept pour cent des entreprises de salons utilisent désormais l'intelligence artificielle.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.1,
+"asr": "Selon l'UFI, 87% des entreprises de salon utilisent désormais l'intelligence artificielle."
+},
+{
+"id": "V3",
+"text": "Quatre points de plus en six mois.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.05,
+"asr": "4 points de plus en 6 mois."
+},
+{
+"id": "V4",
+"text": "Les organisateurs sont en tête : vingt-trois pour cent ont atteint les stades les plus avancés.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.08,
+"asr": "Les organisateurs sont en tête, 23% ont atteint les stades les plus avancés."
+},
+{
+"id": "V5",
+"text": "Dans les congrès, quatre-vingt-onze pour cent des organisateurs s'en servent déjà, selon la P C M A.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.08,
+"asr": "Dans les congrès, 91% des organisateurs s'en servent déjà, selon la PCMA."
+},
+{
+"id": "V6",
+"text": "Mais seuls quinze pour cent en font un véritable levier stratégique.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0,
+"asr": "Mais seul 15% en font un véritable levier stratégique."
+},
+{
+"id": "V7",
+"text": "Voilà pour l'essentiel.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0
+}
+]

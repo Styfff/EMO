@@ -1,0 +1,19 @@
+EXPO INFO · « L'IA s'installe » — bulletin d'environ 45 s, style « Broadcast News Package » de la bibliothèque Lemo-Opuscar
+(https://github.com/lemomo-ai/lemo-opuscar). Graphiques, habillage et animation en code. EXPO INFO est une chaîne fictive.
+
+Faits (détail et citations dans FACTS.md)
+- UFI, Global Exhibition Barometer, 36e édition (enquête de décembre 2025) : https://www.ufi.org/app/uploads/2026/01/UFI_Barometer_36th_Edition.pdf
+- UFI, communiqué de la 35e édition : https://www.ufi.org/media-releases/ufi-global-barometer-indicates-activity-growth-in-several-markets-and-regular-use-of-ai-tools/
+- PCMA, « Survey: How Event Planners Are Using AI for Meetings in 2025 » (18 mars 2025) : https://www.pcma.org/event-planners-gen-ai/
+
+Code
+- main.js et audio/mix.py : adaptés de la démo Broadcast News Package de Lemo-Opuscar (licence du dépôt) ; tools/footage.py repris tel quel.
+
+Polices (SIL Open Font License 1.1, licences dans fonts/)
+- Barlow Condensed — Jeremy Tribby ; IBM Plex Mono — IBM. Via google/fonts.
+
+Voix
+- Synthèse Kokoro (kokoro-onnx, modèle Kokoro-82M, Apache 2.0), voix « ff_siwis ». Contrôle : faster-whisper « small » (MIT).
+
+Musique (composition originale sur la grille du film) et bruitages (synthétisés en code)
+- Échantillons (CC0) : VS Chamber Orchestra: Community Edition, Versilian Community Sample Library (Versilian Studios).
