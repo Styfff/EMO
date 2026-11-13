@@ -1,0 +1,17 @@
+Le fil — film de 46,5 s, style « Urban Sketch · Pen & Wash » de la bibliothèque Lemo-Opuscar
+(https://github.com/lemomo-ai/lemo-opuscar). Tout est dessiné et animé en code ; aucune image générée par IA.
+
+Code de dessin
+- engine.js et poses.js : moteur plume et lavis de la démo Urban Sketch de Lemo-Opuscar (licence du dépôt, voir son fichier LICENSE).
+- world.js, film.js, audio/mix.py : écrits pour ce film.
+
+Polices (SIL Open Font License 1.1, textes de licence dans fonts/)
+- Caveat — Impallari Type, via google/fonts
+- Reenie Beanie — James Grieshaber, via google/fonts
+
+Voix
+- Synthèse vocale Kokoro (kokoro-onnx, modèle Kokoro-82M, licence Apache 2.0), voix « ff_siwis ».
+- Contrôle de prononciation : faster-whisper (modèle « small », licence MIT).
+
+Musique (composition originale) et bruitages (synthétisés en code)
+- Échantillons (CC0) : Karoryfer Samples / sfzinstruments, VS Chamber Orchestra: Community Edition (Versilian Studios), Versilian Community Sample Library (Versilian Studios)

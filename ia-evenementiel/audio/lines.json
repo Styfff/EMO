@@ -1,0 +1,56 @@
+[
+{
+"id": "L1",
+"text": "Neuf heures. Deux mille visiteurs, et Léa ne connaît personne.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0,
+"asr": "9 heures, 2000 visiteurs et Léa ne connaît personne."
+},
+{
+"id": "L2",
+"text": "Mais son badge sait déjà ce qu'elle vient chercher.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0,
+"asr": "Mais son badge, c'est déjà ce qu'elle vient chercher."
+},
+{
+"id": "L3",
+"text": "L'IA lui trace un chemin : la bonne conférence, sans file d'attente.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0,
+"asr": "L'IA lui trace un chemin, la bonne conférence s'en file d'attente."
+},
+{
+"id": "L4",
+"text": "Puis elle lui propose une rencontre. Il parle japonais.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0
+},
+{
+"id": "L5",
+"text": "Aucune importance : la traduction suit la conversation, en direct.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0
+},
+{
+"id": "L6",
+"text": "Le soir venu, chaque échange l'attend, résumé dans son carnet.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 1.0,
+"asr": "Le soir venu, chaque échange latent résumé dans son carnet."
+},
+{
+"id": "L7",
+"text": "L'IA trace le chemin. Les rencontres, elles, restent humaines.",
+"voice": "ff_siwis",
+"lang": "fr-fr",
+"speed": 0.95,
+"asr": "L'IA trace le chemin, les rencontres, elle, restent humaines."
+}
+]
