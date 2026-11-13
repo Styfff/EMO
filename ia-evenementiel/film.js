@@ -207,11 +207,11 @@ function scribble(x0, y0, w, rows, p, from, seed) {
 const SUBS = [
   [.8, 4.5, 'Neuf heures. 2 000 visiteurs, et Léa ne connaît personne.'],
   [6.3, 9.5, 'Mais son badge sait déjà ce qu’elle vient chercher.'],
-  [12.3, 16.5, 'L’IA lui trace un chemin : la bonne conférence, sans file d’attente.'],
+  [12.3, 17.7, 'L’IA lui trace un chemin : la bonne conférence, sans file d’attente.'],
   [19.7, 23.3, 'Puis elle lui propose une rencontre. Il parle japonais.'],
   [27.3, 31.8, 'Aucune importance : la traduction suit la conversation, en direct.'],
   [34.9, 38.8, 'Le soir venu, chaque échange l’attend, résumé dans son carnet.'],
-  [41.3, 45.4, 'L’IA trace le chemin. Les rencontres, elles, restent humaines.'],
+  [41.3, 46.5, 'L’IA trace le chemin. Les rencontres, elles, restent humaines.'],
 ];
 window.SUBS = SUBS;
 function subtitle(t) {

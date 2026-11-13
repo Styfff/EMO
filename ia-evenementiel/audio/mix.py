@@ -134,7 +134,7 @@ for k, t0 in VO.items():
 
 # ================= Mixage =================
 duck = lp(np.convolve(vmask, np.ones(int(.15 * SR)) / int(.15 * SR), 'same'), 3)
-music *= (1 - .45 * np.clip(duck, 0, 1))[:, None]
+music *= (1 - .62 * np.clip(duck, 0, 1))[:, None]
 sil = ((tt >= SIL0) & (tt < SIL1)).astype(float); sil = lp(sil, 20)
 music *= (1 - sil)[:, None]
 fol = sum(np.stack([hp(F[k][:, c], 90) for c in range(2)], 1) * g for k, g in [('pen', 1.0), ('wash', .9), ('room', 1.0), ('fx', .9)])

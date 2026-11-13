@@ -17,11 +17,11 @@
 },
 {
 "id": "L3",
-"text": "L'IA lui trace un chemin : la bonne conférence, sans file d'attente.",
+"text": "L'intelligence artificielle lui trace un chemin : la bonne conférence, sans file d'attente.",
 "voice": "ff_siwis",
 "lang": "fr-fr",
-"speed": 1.0,
-"asr": "L'IA lui trace un chemin, la bonne conférence s'en file d'attente."
+"speed": 1.05,
+"asr": "L'intelligence artificielle lui trace un chemin, la bonne conférence s'en file d'attente."
 },
 {
 "id": "L4",
@@ -47,10 +47,9 @@
 },
 {
 "id": "L7",
-"text": "L'IA trace le chemin. Les rencontres, elles, restent humaines.",
+"text": "L'intelligence artificielle trace le chemin. Les rencontres, elles, restent humaines.",
 "voice": "ff_siwis",
 "lang": "fr-fr",
-"speed": 0.95,
-"asr": "L'IA trace le chemin, les rencontres, elle, restent humaines."
+"speed": 1.0
 }
 ]

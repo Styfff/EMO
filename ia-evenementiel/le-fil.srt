@@ -1,0 +1,27 @@
+1
+00:00:00,800 --> 00:00:04,500
+Neuf heures. 2 000 visiteurs, et Léa ne connaît personne.
+
+2
+00:00:06,300 --> 00:00:09,500
+Mais son badge sait déjà ce qu’elle vient chercher.
+
+3
+00:00:12,300 --> 00:00:16,500
+L’IA lui trace un chemin : la bonne conférence, sans file d’attente.
+
+4
+00:00:19,700 --> 00:00:23,300
+Puis elle lui propose une rencontre. Il parle japonais.
+
+5
+00:00:27,300 --> 00:00:31,800
+Aucune importance : la traduction suit la conversation, en direct.
+
+6
+00:00:34,900 --> 00:00:38,800
+Le soir venu, chaque échange l’attend, résumé dans son carnet.
+
+7
+00:00:41,300 --> 00:00:45,400
+L’IA trace le chemin. Les rencontres, elles, restent humaines.
