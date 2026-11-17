@@ -10,7 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LIB = os.environ['LIB']
 sys.path.insert(0, LIB)
 from core.audio import sampler as S
-from core.audio.sfx import SR, add, noise, lp, hp, bp, env_exp, t_, norm, limit, creak
+from core.audio.sfx import SR, add, noise, lp, hp, bp, env_exp, t_, norm, limit, creak, compress
 
 S.seed(12)
 EVJ = json.load(open(os.path.join(HERE, 'events.json')))
@@ -162,7 +162,7 @@ def rms(x): return float(np.sqrt(np.mean(x ** 2)) + 1e-12)
 mus = music * .9 + pulse
 for c in range(2): mus[:, c] = hp(mus[:, c], 62, 4); fol[:, c] = hp(fol[:, c], 45, 2)
 mix = mus * .5 + fol * .9 + bedmix
-for c in range(2): mix[:, c] = limit(mix[:, c], .92)
+for c in range(2): mix[:, c] = limit(compress(mix[:, c], thr=.12, ratio=2.5, att=.002, rel=.06), .92)   # tame the tick transients so the master reaches -14 LUFS
 os.makedirs(os.path.join(HERE, 'out/stems'), exist_ok=True)
 end = int(DUR * SR); tail = int(.8 * SR)
 mix = mix[:end]; mix[-tail:] *= np.linspace(1, 0, tail)[:, None] ** 2
