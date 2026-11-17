@@ -1,0 +1,14 @@
+Horloge à foliot, éclatée — crédits
+
+Sujet : schéma « Horloge mécanique à foliot », © 2013 La Théorie Sensorielle (fourni par l'utilisateur ; sert de référence, n'apparaît pas dans le film).
+Référence de matière : rendu éclaté horloger fourni par l'utilisateur (grammaire seulement).
+
+Image : modèle 3D construit en code (three.js r170, MIT) ; post-traitement de la bibliothèque Lemo-Opuscar (core/three/post.js).
+Éclairage : HDRI « Photo Studio Loft Hall », Poly Haven, CC0 (https://polyhaven.com/a/photo_studio_loft_hall).
+Police des chiffres du cadran : IM FELL English Roman, (c) 2007 Igino Marini (www.iginomarini.com), SIL Open Font License 1.1 (http://scripts.sil.org/OFL).
+
+Son : musique originale et bruitages synthétisés (numpy/scipy).
+Échantillons : FreePats project (freepats.zenvoid.org), CC0 ; Versilian Community Sample Library (Versilian Studios), CC0.
+  Instruments : marimba, vibraphone (doux, dur, archet), glockenspiel (VCSL) ; glass harp, basse électrique (FreePats).
+
+Outils : Lemo-Opuscar (rendu, échantillonneur, mixage), ffmpeg.
