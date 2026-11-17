@@ -144,8 +144,12 @@ for e in EV:
     elif ty == 'wake': add(fol, swoosh(.5, 1, True), t, .05)
     elif ty == 'open': add(fol, thud(1.2, 60), t, .4); add(fol, metal(1600, 1, 1.6), t, .12, -.2)
     elif ty == 'resolve': add(fol, metal(1320, 1, 2.6, ((1, 1, .9), (2.76, .4, .4), (5.4, .2, .2))), t, .1)
-# the weight: two creaks of the cord in the opening
-for t in (2.0, 4.0): add(fol, creak(.8), t, .1, .1)
+# the weight: two soft stretches of the cord in the opening (smooth band of noise and a low groan, no rasp)
+def rope(v=1.0, d=.7):
+    tt = t_(d); e = np.sin(np.pi * tt / d) ** 2
+    groan = np.sin(2 * np.pi * (105 + 8 * np.sin(2 * np.pi * 3 * tt)) * tt) * .35
+    return norm((bp(noise(d), 500, 1600) * .5 + groan) * e) * v
+for t in (2.0, 4.0): add(fol, rope(.8), t, .07, .1)
 # room tone
 bed = lp(np.cumsum(noise(N / SR)) * .002, 300); bed -= np.convolve(bed, np.ones(4800) / 4800, 'same'); bed = norm(bed) * .5
 bedmix = (bed * .03)[:, None] * np.ones((1, 2))
@@ -166,6 +170,26 @@ for c in range(2): mix[:, c] = limit(compress(mix[:, c], thr=.12, ratio=2.5, att
 os.makedirs(os.path.join(HERE, 'out/stems'), exist_ok=True)
 end = int(DUR * SR); tail = int(.8 * SR)
 mix = mix[:end]; mix[-tail:] *= np.linspace(1, 0, tail)[:, None] ** 2
+mix[:int(.01 * SR)] *= np.linspace(0, 1, int(.01 * SR))[:, None]      # no step at the very first sample
+
+# ---------------- master ----------------
+# Bring the mix to -14 LUFS with true peaks under -1.6 dBTP here, so that mux.sh's loudnorm stays linear (a few tenths of a dB).
+# Otherwise loudnorm falls into its dynamic mode and rides the quiet opening up by ~12 dB more than the rest (audible as crackle).
+import subprocess, tempfile, soxr
+def measure(x):
+    with tempfile.NamedTemporaryFile(suffix='.wav') as f:
+        sf.write(f.name, x, SR, subtype='FLOAT')
+        o = subprocess.run(['ffmpeg', '-hide_banner', '-nostats', '-i', f.name, '-af', 'loudnorm=I=-14:TP=-1.2:LRA=11:print_format=json', '-f', 'null', '-'], capture_output=True, text=True).stderr
+    j = json.loads(o[o.rindex('{'):o.rindex('}') + 1]); return float(j['input_i']), float(j['input_tp'])
+def tp_limit(x, ceil_db=-1.8):
+    up = soxr.resample(x, SR, SR * 4)
+    for c in range(2): up[:, c] = limit(up[:, c], 10 ** (ceil_db / 20), look=.003)
+    return soxr.resample(up, SR * 4, SR)[:len(x)].astype(np.float32)
+for _ in range(3):
+    I, TP = measure(mix)
+    if abs(I + 14) < .25 and TP <= -1.5: break
+    mix = tp_limit(mix * 10 ** ((-14.05 - I) / 20))
+I, TP = measure(mix); print(f'master: {I:.1f} LUFS, true peak {TP:.1f} dBTP')
 sf.write(os.path.join(HERE, 'out/mix.wav'), mix, SR, subtype='PCM_24')
 for nm, x in [('music', mus * .5), ('foley', fol * .9)]: sf.write(os.path.join(HERE, f'out/stems/{nm}.wav'), x[:end], SR, subtype='PCM_24')
 spec = np.abs(np.fft.rfft(mix[:, 0])); fr = np.fft.rfftfreq(len(mix), 1 / SR)
